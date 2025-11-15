@@ -18,10 +18,10 @@ const SurgicalDescription = ({ onNext }: SurgicalDescriptionProps) => {
 
   const handleNext = async () => {
     setIsSending(true);
-    
+
     try {
-      const webhookUrl = "https://n8n.bohorquez.cc/webhook-test/d595b1e7-d764-463a-8bad-0f0f6c3a5a24";
-      
+      const webhookUrl = "https://n8n.bohorquez.cc/webhook-test/7fe060e2-01c5-404b-b7de-d6e5dc421d7a";
+
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -39,7 +39,7 @@ const SurgicalDescription = ({ onNext }: SurgicalDescriptionProps) => {
       }
 
       toast.success("✅ Datos enviados exitosamente");
-      
+
       // Call onNext after successful submission
       if (onNext) {
         onNext();
