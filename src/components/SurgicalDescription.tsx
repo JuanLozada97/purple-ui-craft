@@ -18,7 +18,9 @@ interface SurgicalDescriptionProps {
   setDetalleQuirurgico: (value: string) => void;
   complicaciones: string;
   setComplicaciones: (value: string) => void;
+  suggestedProcedures: Procedure[];
   scheduledProcedures: Procedure[];
+  performedProcedures: Procedure[];
 }
 
 const SurgicalDescription = ({
@@ -29,7 +31,9 @@ const SurgicalDescription = ({
   setDetalleQuirurgico,
   complicaciones,
   setComplicaciones,
+  suggestedProcedures,
   scheduledProcedures,
+  performedProcedures,
 }: SurgicalDescriptionProps) => {
   const [isSending, setIsSending] = useState(false);
   const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
@@ -71,12 +75,22 @@ const SurgicalDescription = ({
           hallazgos,
           "Detalle quirurgico": detalleQuirurgico,
           complicaciones,
+          procedimientos_sugeridos: suggestedProcedures.map((proc) => ({
+            codigo: proc.code,
+            descripcion: proc.name,
+            via: proc.via,
+          })),
           procedimientos_programados: scheduledProcedures.map((proc) => ({
             codigo: proc.code,
             descripcion: proc.name,
             via: proc.via,
           })),
-          
+          procedimientos_realizados: performedProcedures.map((proc) => ({
+            codigo: proc.code,
+            descripcion: proc.name,
+            via: proc.via,
+          })),
+        }),
       });
 
       if (!response.ok) {
