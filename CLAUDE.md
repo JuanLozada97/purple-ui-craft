@@ -122,7 +122,7 @@ The main page implements a **tab-based architecture** for surgical reporting:
 6. If "alta" (high) severity → block navigation for 5 seconds
 7. If "baja/media" (low/medium) → allow continuation with warning
 
-**Key Integration:** n8n webhook at `https://n8n.bohorquez.cc/webhook/d595b1e7-d764-463a-8bad-0f0f6c3a5a24`
+**Key Integration:** n8n webhook configured via `VITE_N8N_WEBHOOK_VALIDATION_URL` environment variable
 
 **Payload Structure:**
 ```json
@@ -518,12 +518,31 @@ export interface ValidationAlert { /* ... */ }
 
 ## External Service Integrations
 
-### 1. n8n Webhook
-**URL:** `https://n8n.bohorquez.cc/webhook/d595b1e7-d764-463a-8bad-0f0f6c3a5a24`
+### 1. n8n Webhooks
+
+The application uses **two separate n8n webhooks** configured via environment variables:
+
+#### Validation Webhook (SurgicalDescription)
+**Environment Variable:** `VITE_N8N_WEBHOOK_VALIDATION_URL`
 **Method:** POST
 **Purpose:** Surgical description validation with AI
+**Security:** URL stored in `.env` (not in version control)
 **Request:** Hallazgos, surgical details, complications, scheduled procedures
 **Response:** Validation alerts with severity levels
+
+#### Suggestions Webhook (SurgicalIntervention)
+**Environment Variable:** `VITE_N8N_WEBHOOK_SUGGESTIONS_URL`
+**Method:** POST
+**Purpose:** Generate AI-powered procedure suggestions
+**Security:** URL stored in `.env` (not in version control)
+**Request:** Hallazgos, surgical details, complications, scheduled procedures (all sanitized)
+**Response:** Array of suggested procedures with codes, descriptions, and vias
+
+**Security Measures:**
+- All inputs sanitized before sending to webhooks
+- Zod schema validation before API calls
+- Error handling prevents data exposure
+- See `SECURITY.md` for detailed security guidelines
 
 ### 2. Supabase Edge Functions
 **Function:** `suggest-procedures`

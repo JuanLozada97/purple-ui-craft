@@ -86,10 +86,10 @@ const SurgicalDescription = ({
     setValidationData(null); // Clear previous alerts
 
     try {
-      const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_VALIDATION_URL;
 
       if (!webhookUrl) {
-        throw new Error("La configuración del webhook no está disponible");
+        throw new Error("La configuración del webhook de validación no está disponible");
       }
 
       // Sanitize inputs before sending

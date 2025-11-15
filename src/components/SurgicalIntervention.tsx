@@ -45,6 +45,14 @@ const SurgicalIntervention = ({
   const generateSuggestions = async () => {
     setIsLoadingSuggestions(true);
     try {
+      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_SUGGESTIONS_URL;
+
+      if (!webhookUrl) {
+        toast.error("La configuración del webhook de sugerencias no está disponible");
+        setIsLoadingSuggestions(false);
+        return;
+      }
+
       // Sanitize inputs before sending to webhook
       const sanitizedPayload = {
         hallazgos: sanitizeForAIPrompt(hallazgos, 500),
@@ -57,7 +65,7 @@ const SurgicalIntervention = ({
         })),
       };
 
-      const response = await fetch("https://n8n.bohorquez.cc/webhook/7fe060e2-01c5-404b-b7de-d6e5dc421d7a", {
+      const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
