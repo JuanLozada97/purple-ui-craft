@@ -58,6 +58,9 @@ const Index = () => {
               setScheduledProcedures={setScheduledProcedures}
               performedProcedures={performedProcedures}
               setPerformedProcedures={setPerformedProcedures}
+              hallazgos={hallazgos}
+              detalleQuirurgico={detalleQuirurgico}
+              complicaciones={complicaciones}
             />
           </TabsContent>
         </Tabs>
