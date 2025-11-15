@@ -60,6 +60,25 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Dictado por voz (Web Speech API)
+
+Se ha integrado dictado por voz en:
+
+- Todos los `Textarea` (`src/components/ui/textarea.tsx`): aparece un botón de micrófono en la esquina superior derecha de cada textarea. Al activarlo, el dictado escribe en el campo que tenga el foco.
+- Módulo de Informe Quirúrgico (`src/pages/SurgicalReport.tsx`): botón global de dictado en la parte superior del módulo, que también inserta texto en el `textarea` activo.
+
+Detalles:
+- Soporte nativo: `SpeechRecognition`/`webkitSpeechRecognition`. Navegadores compatibles: Chrome/Edge/Opera; Safari con prefijo webkit (puede variar en iOS).
+- Idioma: usa `navigator.language` con fallback `es-ES`.
+- Resultados: se insertan únicamente los resultados finales, respetando la selección y moviendo el caret.
+- Errores y compatibilidad: si no hay soporte o no hay un campo activo, se muestra un toast con el detalle.
+
+Archivos clave:
+- `src/hooks/useSpeechRecognition.ts`: hook para manejar el reconocimiento de voz.
+- `src/lib/appendToActiveTextarea.ts`: inserta texto en el textarea activo y emite evento `input`.
+- `src/components/ui/textarea.tsx`: añade overlay con botón de micrófono por campo.
+- `src/pages/SurgicalReport.tsx`: añade botón de dictado global.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/5e24e6bd-6898-43e6-8b67-7a92cf0ced91) and click on Share -> Publish.

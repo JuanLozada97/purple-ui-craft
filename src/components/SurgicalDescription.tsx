@@ -198,6 +198,7 @@ const SurgicalDescription = ({
               {...register("hallazgos", {
                 onChange: (e) => setHallazgos(e.target.value),
               })}
+              maxLength={5000}
               placeholder="Describa los hallazgos operatorios..."
               className={cn(
                 "min-h-[200px] resize-y",
@@ -225,6 +226,7 @@ const SurgicalDescription = ({
               {...register("detalleQuirurgico", {
                 onChange: (e) => setDetalleQuirurgico(e.target.value),
               })}
+              maxLength={5000}
               placeholder="Describa el detalle quirúrgico..."
               className={cn(
                 "min-h-[200px] resize-y",
@@ -252,6 +254,7 @@ const SurgicalDescription = ({
               {...register("complicaciones", {
                 onChange: (e) => setComplicaciones(e.target.value),
               })}
+              maxLength={5000}
               placeholder="Describa las complicaciones si las hubo..."
               className={cn(
                 "min-h-[200px] resize-y",
