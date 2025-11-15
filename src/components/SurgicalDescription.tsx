@@ -75,25 +75,12 @@ const SurgicalDescription = ({
           hallazgos,
           "Detalle quirurgico": detalleQuirurgico,
           complicaciones,
-          procedimientos_sugeridos: suggestedProcedures.map((proc) => ({
-            codigo: proc.code,
-            descripcion: proc.name,
-            via: proc.via,
-            razon: proc.reason || "",
-          })),
           procedimientos_programados: scheduledProcedures.map((proc) => ({
             codigo: proc.code,
             descripcion: proc.name,
             via: proc.via,
           })),
-          procedimientos_realizados: performedProcedures.map((proc) => ({
-            codigo: proc.code,
-            descripcion: proc.name,
-            via: proc.via,
-            cantidad: proc.quantity || 1,
-            es_principal: proc.isPrimary || false,
-          })),
-        }),
+          
       });
 
       if (!response.ok) {
