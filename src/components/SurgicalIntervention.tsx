@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { aiSuggestionRequestSchema, procedureSchema } from "@/schemas/surgical";
 import { sanitizeForAIPrompt } from "@/lib/sanitize";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 export interface Procedure {
   code: string;
   name: string;
@@ -65,7 +66,7 @@ const SurgicalIntervention = ({
         })),
       };
 
-      const response = await fetch(webhookUrl, {
+      const response = await fetchWithTimeout(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
