@@ -23,7 +23,7 @@ interface SurgicalDescriptionProps {
   performedProcedures: Procedure[];
 }
 
-const SurgicalDescription = ({ 
+const SurgicalDescription = ({
   onNext,
   hallazgos,
   setHallazgos,
@@ -56,7 +56,7 @@ const SurgicalDescription = ({
   // Helper function to check if a field has alerts
   const hasAlert = (fieldName: string): boolean => {
     if (!validationData?.alertas) return false;
-    return validationData.alertas.some(alert => alert.campo === fieldName);
+    return validationData.alertas.some((alert) => alert.campo === fieldName);
   };
 
   const handleNext = async () => {
@@ -64,7 +64,7 @@ const SurgicalDescription = ({
     setValidationData(null); // Clear previous alerts
 
     try {
-      const webhookUrl = "https://n8n.bohorquez.cc/webhook-test/d595b1e7-d764-463a-8bad-0f0f6c3a5a24";
+      const webhookUrl = "https://n8n.bohorquez.cc/webhook/d595b1e7-d764-463a-8bad-0f0f6c3a5a24";
 
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -75,24 +75,24 @@ const SurgicalDescription = ({
           hallazgos,
           "Detalle quirurgico": detalleQuirurgico,
           complicaciones,
-          procedimientos_sugeridos: suggestedProcedures.map(proc => ({
+          procedimientos_sugeridos: suggestedProcedures.map((proc) => ({
             codigo: proc.code,
             descripcion: proc.name,
             via: proc.via,
-            razon: proc.reason || ""
+            razon: proc.reason || "",
           })),
-          procedimientos_programados: scheduledProcedures.map(proc => ({
+          procedimientos_programados: scheduledProcedures.map((proc) => ({
             codigo: proc.code,
             descripcion: proc.name,
-            via: proc.via
+            via: proc.via,
           })),
-          procedimientos_realizados: performedProcedures.map(proc => ({
+          procedimientos_realizados: performedProcedures.map((proc) => ({
             codigo: proc.code,
             descripcion: proc.name,
             via: proc.via,
             cantidad: proc.quantity || 1,
-            es_principal: proc.isPrimary || false
-          }))
+            es_principal: proc.isPrimary || false,
+          })),
         }),
       });
 
@@ -102,21 +102,20 @@ const SurgicalDescription = ({
 
       // Process validation response
       const validationResult: ValidationResponse = await response.json();
-      
+
       if (validationResult.tiene_alertas) {
         // Show alerts and block navigation
         setValidationData(validationResult);
         setCanProceed(false);
         setCountdown(5);
-        
-        toast.warning(
-          `⚠️ Se encontraron ${validationResult.alertas.length} problema(s). Revisa las alertas.`,
-          { duration: 4000 }
-        );
+
+        toast.warning(`⚠️ Se encontraron ${validationResult.alertas.length} problema(s). Revisa las alertas.`, {
+          duration: 4000,
+        });
       } else {
         // No alerts: proceed normally
         toast.success("✅ Datos validados y enviados exitosamente");
-        
+
         if (onNext) {
           onNext();
         }
@@ -140,7 +139,7 @@ const SurgicalDescription = ({
       <CardContent className="p-6 space-y-6">
         {/* Show validation alerts if they exist */}
         {validationData?.tiene_alertas && (
-          <ValidationAlerts 
+          <ValidationAlerts
             validationData={validationData}
             onDismiss={() => {
               setValidationData(null);
@@ -152,12 +151,9 @@ const SurgicalDescription = ({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label 
-              htmlFor="findings" 
-              className={cn(
-                "text-base font-semibold text-medical-blue",
-                hasAlert("hallazgos") && "text-destructive"
-              )}
+            <Label
+              htmlFor="findings"
+              className={cn("text-base font-semibold text-medical-blue", hasAlert("hallazgos") && "text-destructive")}
             >
               Hallazgo operatorio
               {hasAlert("hallazgos") && <span className="ml-2">⚠️</span>}
@@ -169,17 +165,17 @@ const SurgicalDescription = ({
               placeholder="Describa los hallazgos operatorios..."
               className={cn(
                 "min-h-[200px] resize-y",
-                hasAlert("hallazgos") && "border-destructive border-2 focus-visible:ring-destructive"
+                hasAlert("hallazgos") && "border-destructive border-2 focus-visible:ring-destructive",
               )}
             />
           </div>
 
           <div className="space-y-2">
-            <Label 
-              htmlFor="details" 
+            <Label
+              htmlFor="details"
               className={cn(
                 "text-base font-semibold text-medical-blue",
-                hasAlert("Detalle quirurgico") && "text-destructive"
+                hasAlert("Detalle quirurgico") && "text-destructive",
               )}
             >
               Detalle quirúrgico - procedimientos
@@ -192,17 +188,17 @@ const SurgicalDescription = ({
               placeholder="Describa el detalle quirúrgico..."
               className={cn(
                 "min-h-[200px] resize-y",
-                hasAlert("Detalle quirurgico") && "border-destructive border-2 focus-visible:ring-destructive"
+                hasAlert("Detalle quirurgico") && "border-destructive border-2 focus-visible:ring-destructive",
               )}
             />
           </div>
 
           <div className="space-y-2">
-            <Label 
-              htmlFor="complications" 
+            <Label
+              htmlFor="complications"
               className={cn(
                 "text-base font-semibold text-medical-blue",
-                hasAlert("complicaciones") && "text-destructive"
+                hasAlert("complicaciones") && "text-destructive",
               )}
             >
               Complicaciones
@@ -215,7 +211,7 @@ const SurgicalDescription = ({
               placeholder="Describa las complicaciones si las hubo..."
               className={cn(
                 "min-h-[200px] resize-y",
-                hasAlert("complicaciones") && "border-destructive border-2 focus-visible:ring-destructive"
+                hasAlert("complicaciones") && "border-destructive border-2 focus-visible:ring-destructive",
               )}
             />
           </div>
@@ -224,12 +220,10 @@ const SurgicalDescription = ({
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline">← Atrás</Button>
-          <Button 
-            onClick={handleNext} 
+          <Button
+            onClick={handleNext}
             disabled={isSending || !canProceed || countdown !== null}
-            className={cn(
-              countdown !== null && "opacity-50 cursor-not-allowed"
-            )}
+            className={cn(countdown !== null && "opacity-50 cursor-not-allowed")}
           >
             {isSending ? (
               <>
@@ -237,9 +231,7 @@ const SurgicalDescription = ({
                 Validando...
               </>
             ) : countdown !== null ? (
-              <>
-                🔒 Espera {countdown}s para continuar
-              </>
+              <>🔒 Espera {countdown}s para continuar</>
             ) : (
               "Siguiente →"
             )}
