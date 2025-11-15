@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface Procedure {
+export interface Procedure {
   code: string;
   name: string;
   via: string;
@@ -20,17 +20,24 @@ interface Procedure {
   isPrimary?: boolean;
 }
 
-const SurgicalIntervention = () => {
-  const [suggestedProcedures, setSuggestedProcedures] = useState<Procedure[]>([]);
+interface SurgicalInterventionProps {
+  suggestedProcedures: Procedure[];
+  setSuggestedProcedures: (value: Procedure[]) => void;
+  scheduledProcedures: Procedure[];
+  setScheduledProcedures: (value: Procedure[]) => void;
+  performedProcedures: Procedure[];
+  setPerformedProcedures: (value: Procedure[]) => void;
+}
+
+const SurgicalIntervention = ({
+  suggestedProcedures,
+  setSuggestedProcedures,
+  scheduledProcedures,
+  setScheduledProcedures,
+  performedProcedures,
+  setPerformedProcedures,
+}: SurgicalInterventionProps) => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [scheduledProcedures, setScheduledProcedures] = useState<Procedure[]>([
-    {
-      code: "471102",
-      name: "471102 - APENDICECTOMIA VIA ABIERTA",
-      via: "BILATERAL MULTIPLE",
-    },
-  ]);
-  const [performedProcedures, setPerformedProcedures] = useState<Procedure[]>([]);
 
   const generateSuggestions = async () => {
     setIsLoadingSuggestions(true);
