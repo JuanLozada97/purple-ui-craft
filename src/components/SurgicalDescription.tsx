@@ -13,6 +13,7 @@ import ValidationAlerts from "./ValidationAlerts";
 import { ValidationResponse } from "@/types/validation";
 import { surgicalDescriptionSchema, type SurgicalDescriptionFormData } from "@/schemas/surgical";
 import { sanitizeMedicalText } from "@/lib/sanitize";
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout";
 
 interface SurgicalDescriptionProps {
   onNext?: () => void;
@@ -104,7 +105,7 @@ const SurgicalDescription = ({
         })),
       };
 
-      const response = await fetch(webhookUrl, {
+      const response = await fetchWithTimeout(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
