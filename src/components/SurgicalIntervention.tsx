@@ -17,21 +17,10 @@ import {
   PROCEDURE_CATEGORIES,
   searchProcedures,
   getProceduresByCategory,
-  type ProcedureTemplate
+  type ProcedureTemplate,
 } from "@/data/procedures";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 export interface Procedure {
   code: string;
@@ -61,7 +50,7 @@ const SurgicalIntervention = ({
   setPerformedProcedures,
   hallazgos,
   detalleQuirurgico,
-  complicaciones
+  complicaciones,
 }: SurgicalInterventionProps) => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
@@ -83,9 +72,9 @@ const SurgicalIntervention = ({
 
       // Sanitize inputs before sending to webhook
       const sanitizedPayload = {
-        hallazgos: sanitizeForAIPrompt(hallazgos, 500),
-        "Detalle quirurgico": sanitizeForAIPrompt(detalleQuirurgico, 500),
-        complicaciones: sanitizeForAIPrompt(complicaciones, 500),
+        hallazgos: sanitizeForAIPrompt(hallazgos, 10000),
+        "Detalle quirurgico": sanitizeForAIPrompt(detalleQuirurgico, 10000),
+        complicaciones: sanitizeForAIPrompt(complicaciones, 10000),
         procedimientos_programados: scheduledProcedures.map((proc) => ({
           codigo: proc.code,
           descripcion: proc.name,
@@ -106,13 +95,14 @@ const SurgicalIntervention = ({
       }
 
       const data = await response.json();
-      
+
       // Mapear la respuesta del webhook al formato esperado
-      const suggestions = data.procedimientos_sugeridos?.map((proc: any) => ({
-        code: proc.codigo,
-        name: proc.descripcion,
-        via: proc.via,
-      })) || [];
+      const suggestions =
+        data.procedimientos_sugeridos?.map((proc: any) => ({
+          code: proc.codigo,
+          name: proc.descripcion,
+          via: proc.via,
+        })) || [];
 
       setSuggestedProcedures(suggestions);
       toast.success(`✅ ${suggestions.length} sugerencias generadas exitosamente`);
@@ -127,34 +117,34 @@ const SurgicalIntervention = ({
     // Validate procedure data
     const validationResult = procedureSchema.safeParse(procedure);
 
-  if (!validationResult.success) {
-    toast.error("El procedimiento tiene datos inválidos");
-    console.error("Validation errors:", validationResult.error.errors);
-    return;
-  }
+    if (!validationResult.success) {
+      toast.error("El procedimiento tiene datos inválidos");
+      console.error("Validation errors:", validationResult.error.errors);
+      return;
+    }
 
-  setScheduledProcedures([...scheduledProcedures, validationResult.data as Procedure]);
-  toast.success("✅ Procedimiento agregado a programados");
+    setScheduledProcedures([...scheduledProcedures, validationResult.data as Procedure]);
+    toast.success("✅ Procedimiento agregado a programados");
   };
 
   const addToPerformed = (procedure: Procedure) => {
     const newProcedure = {
       ...procedure,
       quantity: 1,
-      isPrimary: performedProcedures.length === 0
+      isPrimary: performedProcedures.length === 0,
     };
 
     // Validate procedure data
     const validationResult = procedureSchema.safeParse(newProcedure);
 
-  if (!validationResult.success) {
-    toast.error("El procedimiento tiene datos inválidos");
-    console.error("Validation errors:", validationResult.error.errors);
-    return;
-  }
+    if (!validationResult.success) {
+      toast.error("El procedimiento tiene datos inválidos");
+      console.error("Validation errors:", validationResult.error.errors);
+      return;
+    }
 
-  setPerformedProcedures([...performedProcedures, validationResult.data as Procedure]);
-  toast.success("✅ Procedimiento agregado a realizados");
+    setPerformedProcedures([...performedProcedures, validationResult.data as Procedure]);
+    toast.success("✅ Procedimiento agregado a realizados");
   };
   const removeFromScheduled = (index: number) => {
     setScheduledProcedures(scheduledProcedures.filter((_, i) => i !== index));
@@ -194,10 +184,12 @@ const SurgicalIntervention = ({
   };
 
   // Filter procedures based on category and search
-  const filteredProcedures = selectedCategory === "all"
-    ? PROCEDURES_LIST
-    : getProceduresByCategory(PROCEDURE_CATEGORIES[selectedCategory as keyof typeof PROCEDURE_CATEGORIES]);
-  return <Card>
+  const filteredProcedures =
+    selectedCategory === "all"
+      ? PROCEDURES_LIST
+      : getProceduresByCategory(PROCEDURE_CATEGORIES[selectedCategory as keyof typeof PROCEDURE_CATEGORIES]);
+  return (
+    <Card>
       <CardHeader className="bg-accent">
         <CardTitle className="text-primary flex items-center gap-2">
           <span>🔄</span>
@@ -206,10 +198,8 @@ const SurgicalIntervention = ({
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         {/* General Section */}
-        
 
         {/* Additional Information */}
-        
 
         {/* IPS Services */}
         <div className="space-y-4">
@@ -236,14 +226,9 @@ const SurgicalIntervention = ({
               <div className="flex gap-2">
                 <Popover open={open} onOpenChange={setOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={open}
-                      className="flex-1 justify-between"
-                    >
+                    <Button variant="outline" role="combobox" aria-expanded={open} className="flex-1 justify-between">
                       {selectedProcedure
-                        ? `${selectedProcedure.code} - ${selectedProcedure.name.substring(0, 30)}${selectedProcedure.name.length > 30 ? '...' : ''}`
+                        ? `${selectedProcedure.code} - ${selectedProcedure.name.substring(0, 30)}${selectedProcedure.name.length > 30 ? "..." : ""}`
                         : "Seleccionar procedimiento..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -283,7 +268,7 @@ const SurgicalIntervention = ({
                                     selectedProcedure?.code === procedure.code &&
                                       selectedProcedure?.via === procedure.via
                                       ? "opacity-100"
-                                      : "opacity-0"
+                                      : "opacity-0",
                                   )}
                                 />
                                 <div className="flex flex-col">
@@ -301,20 +286,12 @@ const SurgicalIntervention = ({
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Button
-                  size="default"
-                  onClick={addProcedureFromList}
-                  disabled={!selectedProcedure}
-                >
+                <Button size="default" onClick={addProcedureFromList} disabled={!selectedProcedure}>
                   <Plus className="h-4 w-4 mr-1" />
                   Agregar
                 </Button>
               </div>
-              {selectedProcedure && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Vía: {selectedProcedure.via}
-                </p>
-              )}
+              {selectedProcedure && <p className="text-xs text-muted-foreground mt-1">Vía: {selectedProcedure.via}</p>}
             </div>
           </div>
 
@@ -327,21 +304,28 @@ const SurgicalIntervention = ({
                   Procedimientos Sugeridos por IA
                 </h4>
                 <Button onClick={generateSuggestions} disabled={isLoadingSuggestions} size="sm" className="gap-2">
-                  {isLoadingSuggestions ? <>
+                  {isLoadingSuggestions ? (
+                    <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Generando...
-                    </> : <>
+                    </>
+                  ) : (
+                    <>
                       <Sparkles className="h-4 w-4" />
                       Generar Sugerencias con IA
-                    </>}
+                    </>
+                  )}
                 </Button>
               </div>
 
-              {isLoadingSuggestions ? <div className="space-y-2">
+              {isLoadingSuggestions ? (
+                <div className="space-y-2">
                   <Skeleton className="h-12 w-full" />
                   <Skeleton className="h-12 w-full" />
                   <Skeleton className="h-12 w-full" />
-                </div> : suggestedProcedures.length > 0 ? <Table>
+                </div>
+              ) : suggestedProcedures.length > 0 ? (
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[100px]">Código</TableHead>
@@ -352,24 +336,26 @@ const SurgicalIntervention = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {suggestedProcedures.map((procedure, index) => <TableRow key={index} className="bg-background">
+                    {suggestedProcedures.map((procedure, index) => (
+                      <TableRow key={index} className="bg-background">
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {procedure.reason}
-                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{procedure.reason}</TableCell>
                         <TableCell>
                           <Button size="sm" variant="outline" onClick={() => addToScheduled(procedure)}>
                             Agregar <ArrowRight className="h-4 w-4 ml-1" />
                           </Button>
                         </TableCell>
-                      </TableRow>)}
+                      </TableRow>
+                    ))}
                   </TableBody>
-                </Table> : <p className="text-center text-muted-foreground py-8">
-                  Haz clic en el botón para generar sugerencias de procedimientos basadas en el
-                  diagnóstico del paciente
-                </p>}
+                </Table>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  Haz clic en el botón para generar sugerencias de procedimientos basadas en el diagnóstico del paciente
+                </p>
+              )}
             </div>
 
             {/* Scheduled Procedures */}
@@ -385,7 +371,9 @@ const SurgicalIntervention = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {scheduledProcedures.length > 0 ? scheduledProcedures.map((procedure, index) => <TableRow key={index} className="bg-accent">
+                  {scheduledProcedures.length > 0 ? (
+                    scheduledProcedures.map((procedure, index) => (
+                      <TableRow key={index} className="bg-accent">
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
@@ -399,11 +387,15 @@ const SurgicalIntervention = ({
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>) : <TableRow>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                         No hay procedimientos programados
                       </TableCell>
-                    </TableRow>}
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -423,24 +415,28 @@ const SurgicalIntervention = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {performedProcedures.length > 0 ? performedProcedures.map((procedure, index) => <TableRow key={index} className="bg-primary/5">
+                  {performedProcedures.length > 0 ? (
+                    performedProcedures.map((procedure, index) => (
+                      <TableRow key={index} className="bg-primary/5">
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
                         <TableCell>{procedure.quantity}</TableCell>
-                        <TableCell className="text-center">
-                          {procedure.isPrimary ? "✓" : ""}
-                        </TableCell>
+                        <TableCell className="text-center">{procedure.isPrimary ? "✓" : ""}</TableCell>
                         <TableCell>
                           <Button size="sm" variant="ghost" onClick={() => removeFromPerformed(index)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>
-                      </TableRow>) : <TableRow>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
                       <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         No hay procedimientos realizados
                       </TableCell>
-                    </TableRow>}
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -448,7 +444,6 @@ const SurgicalIntervention = ({
         </div>
 
         {/* Diagnostics */}
-        
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-4 border-t">
@@ -459,6 +454,7 @@ const SurgicalIntervention = ({
           <Button variant="secondary">Ayuda</Button>
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
 export default SurgicalIntervention;
