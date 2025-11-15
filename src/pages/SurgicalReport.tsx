@@ -1,11 +1,16 @@
 import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import PatientInfo from "@/components/PatientInfo";
 import SurgicalIntervention, { Procedure } from "@/components/SurgicalIntervention";
 import SurgicalDescription from "@/components/SurgicalDescription";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
-const Index = () => {
+const SurgicalReport = () => {
+  const { patientId } = useParams<{ patientId: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("description");
   
   // Estados de Descripción Quirúrgica
@@ -27,8 +32,18 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Back button */}
+        <Button
+          variant="outline"
+          onClick={() => navigate("/")}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver al listado de pacientes
+        </Button>
+
         <PatientInfo />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -69,4 +84,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default SurgicalReport;
