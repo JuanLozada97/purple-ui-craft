@@ -68,13 +68,16 @@ const ValidationAlerts = ({ validationData, onDismiss }: ValidationAlertsProps) 
       <Alert variant={getAlertVariant(nivel_gravedad_global)}>
         <AlertCircle className="h-5 w-5" />
         <AlertTitle className="text-lg font-bold flex items-center gap-2 flex-wrap">
-          ⚠️ Se encontraron {alertas.length} problema(s) en la descripción
+          {nivel_gravedad_global === "alta" ? "⚠️" : "ℹ️"} Se encontraron {alertas.length} problema(s) en la descripción
           <Badge variant={getGravedadVariant(nivel_gravedad_global)}>
             Gravedad: {nivel_gravedad_global}
           </Badge>
         </AlertTitle>
         <AlertDescription>
-          Por favor revisa y corrige los siguientes puntos antes de continuar.
+          {nivel_gravedad_global === "alta" 
+            ? "Debes corregir estos puntos antes de continuar (5 segundos de espera)."
+            : "Revisa estas recomendaciones. Puedes continuar si lo deseas."
+          }
         </AlertDescription>
       </Alert>
 

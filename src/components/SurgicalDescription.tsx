@@ -87,14 +87,29 @@ const SurgicalDescription = ({
       const validationResult: ValidationResponse = await response.json();
 
       if (validationResult.tiene_alertas) {
-        // Show alerts and block navigation
+        // Siempre mostrar las alertas
         setValidationData(validationResult);
-        setCanProceed(false);
-        setCountdown(5);
-
-        toast.warning(`⚠️ Se encontraron ${validationResult.alertas.length} problema(s). Revisa las alertas.`, {
-          duration: 4000,
-        });
+        
+        if (validationResult.nivel_gravedad_global === "alta") {
+          // GRAVEDAD ALTA: Bloquear navegación por 5 segundos
+          setCanProceed(false);
+          setCountdown(5);
+          toast.warning(
+            `⚠️ Se encontraron ${validationResult.alertas.length} problema(s) de gravedad ALTA. Debes revisar antes de continuar.`,
+            { duration: 5000 }
+          );
+        } else {
+          // GRAVEDAD MEDIA/BAJA: Mostrar advertencia pero permitir continuar
+          toast.info(
+            `ℹ️ Se encontraron ${validationResult.alertas.length} recomendación(es) de gravedad ${validationResult.nivel_gravedad_global.toUpperCase()}. Puedes revisar y continuar.`,
+            { duration: 4000 }
+          );
+          
+          // Permitir continuar inmediatamente
+          if (onNext) {
+            onNext();
+          }
+        }
       } else {
         // No alerts: proceed normally
         toast.success("✅ Datos validados y enviados exitosamente");
