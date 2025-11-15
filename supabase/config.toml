@@ -1,0 +1,4 @@
+project_id = "pxraywwowagkwjvvmqcq"
+
+[functions.suggest-procedures]
+verify_jwt = false
