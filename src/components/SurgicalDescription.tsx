@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Procedure } from "./SurgicalIntervention";
+import { cn } from "@/lib/utils";
+import ValidationAlerts from "./ValidationAlerts";
+import { ValidationResponse } from "@/types/validation";
 
 interface SurgicalDescriptionProps {
   onNext?: () => void;
@@ -33,9 +36,32 @@ const SurgicalDescription = ({
   performedProcedures,
 }: SurgicalDescriptionProps) => {
   const [isSending, setIsSending] = useState(false);
+  const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [canProceed, setCanProceed] = useState(true);
+
+  // Countdown effect
+  useEffect(() => {
+    if (countdown !== null && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      setCountdown(null);
+      setCanProceed(true);
+    }
+  }, [countdown]);
+
+  // Helper function to check if a field has alerts
+  const hasAlert = (fieldName: string): boolean => {
+    if (!validationData?.alertas) return false;
+    return validationData.alertas.some(alert => alert.campo === fieldName);
+  };
 
   const handleNext = async () => {
     setIsSending(true);
+    setValidationData(null); // Clear previous alerts
 
     try {
       const webhookUrl = "https://n8n.bohorquez.cc/webhook-test/d595b1e7-d764-463a-8bad-0f0f6c3a5a24";
@@ -74,11 +100,26 @@ const SurgicalDescription = ({
         throw new Error("Error al enviar los datos al webhook");
       }
 
-      toast.success("✅ Datos enviados exitosamente");
-
-      // Call onNext after successful submission
-      if (onNext) {
-        onNext();
+      // Process validation response
+      const validationResult: ValidationResponse = await response.json();
+      
+      if (validationResult.tiene_alertas) {
+        // Show alerts and block navigation
+        setValidationData(validationResult);
+        setCanProceed(false);
+        setCountdown(5);
+        
+        toast.warning(
+          `⚠️ Se encontraron ${validationResult.alertas.length} problema(s). Revisa las alertas.`,
+          { duration: 4000 }
+        );
+      } else {
+        // No alerts: proceed normally
+        toast.success("✅ Datos validados y enviados exitosamente");
+        
+        if (onNext) {
+          onNext();
+        }
       }
     } catch (error) {
       console.error("Error sending data to webhook:", error);
@@ -97,43 +138,85 @@ const SurgicalDescription = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
+        {/* Show validation alerts if they exist */}
+        {validationData?.tiene_alertas && (
+          <ValidationAlerts 
+            validationData={validationData}
+            onDismiss={() => {
+              setValidationData(null);
+              setCanProceed(true);
+              setCountdown(null);
+            }}
+          />
+        )}
+
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="findings" className="text-base font-semibold text-medical-blue">
+            <Label 
+              htmlFor="findings" 
+              className={cn(
+                "text-base font-semibold text-medical-blue",
+                hasAlert("hallazgos") && "text-destructive"
+              )}
+            >
               Hallazgo operatorio
+              {hasAlert("hallazgos") && <span className="ml-2">⚠️</span>}
             </Label>
             <Textarea
               id="findings"
               value={hallazgos}
               onChange={(e) => setHallazgos(e.target.value)}
-              placeholder="ZXCZXCZXC"
-              className="min-h-[200px] resize-y"
+              placeholder="Describa los hallazgos operatorios..."
+              className={cn(
+                "min-h-[200px] resize-y",
+                hasAlert("hallazgos") && "border-destructive border-2 focus-visible:ring-destructive"
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="details" className="text-base font-semibold text-medical-blue">
+            <Label 
+              htmlFor="details" 
+              className={cn(
+                "text-base font-semibold text-medical-blue",
+                hasAlert("Detalle quirurgico") && "text-destructive"
+              )}
+            >
               Detalle quirúrgico - procedimientos
+              {hasAlert("Detalle quirurgico") && <span className="ml-2">⚠️</span>}
             </Label>
             <Textarea
               id="details"
               value={detalleQuirurgico}
               onChange={(e) => setDetalleQuirurgico(e.target.value)}
-              placeholder="ZXCZXCZX"
-              className="min-h-[200px] resize-y"
+              placeholder="Describa el detalle quirúrgico..."
+              className={cn(
+                "min-h-[200px] resize-y",
+                hasAlert("Detalle quirurgico") && "border-destructive border-2 focus-visible:ring-destructive"
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="complications" className="text-base font-semibold text-medical-blue">
+            <Label 
+              htmlFor="complications" 
+              className={cn(
+                "text-base font-semibold text-medical-blue",
+                hasAlert("complicaciones") && "text-destructive"
+              )}
+            >
               Complicaciones
+              {hasAlert("complicaciones") && <span className="ml-2">⚠️</span>}
             </Label>
             <Textarea
               id="complications"
               value={complicaciones}
               onChange={(e) => setComplicaciones(e.target.value)}
-              placeholder="ZXCZXCZXC"
-              className="min-h-[200px] resize-y"
+              placeholder="Describa las complicaciones si las hubo..."
+              className={cn(
+                "min-h-[200px] resize-y",
+                hasAlert("complicaciones") && "border-destructive border-2 focus-visible:ring-destructive"
+              )}
             />
           </div>
         </div>
@@ -141,11 +224,21 @@ const SurgicalDescription = ({
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline">← Atrás</Button>
-          <Button onClick={handleNext} disabled={isSending}>
+          <Button 
+            onClick={handleNext} 
+            disabled={isSending || !canProceed || countdown !== null}
+            className={cn(
+              countdown !== null && "opacity-50 cursor-not-allowed"
+            )}
+          >
             {isSending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Enviando...
+                Validando...
+              </>
+            ) : countdown !== null ? (
+              <>
+                🔒 Espera {countdown}s para continuar
               </>
             ) : (
               "Siguiente →"
