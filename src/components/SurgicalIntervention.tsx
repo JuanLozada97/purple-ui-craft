@@ -10,7 +10,6 @@ import { Plus, ArrowRight, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-
 export interface Procedure {
   code: string;
   name: string;
@@ -19,7 +18,6 @@ export interface Procedure {
   quantity?: number;
   isPrimary?: boolean;
 }
-
 interface SurgicalInterventionProps {
   suggestedProcedures: Procedure[];
   setSuggestedProcedures: (value: Procedure[]) => void;
@@ -28,37 +26,35 @@ interface SurgicalInterventionProps {
   performedProcedures: Procedure[];
   setPerformedProcedures: (value: Procedure[]) => void;
 }
-
 const SurgicalIntervention = ({
   suggestedProcedures,
   setSuggestedProcedures,
   scheduledProcedures,
   setScheduledProcedures,
   performedProcedures,
-  setPerformedProcedures,
+  setPerformedProcedures
 }: SurgicalInterventionProps) => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-
   const generateSuggestions = async () => {
     setIsLoadingSuggestions(true);
     try {
-      const { data, error } = await supabase.functions.invoke("suggest-procedures", {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke("suggest-procedures", {
         body: {
           diagnosis: "A013 - FIEBRE PARATIFOIDEA C",
           surgeryType: "Cirugía urgente",
-          patientInfo: "Paciente con anestesia regional, clasificación ASA II",
-        },
+          patientInfo: "Paciente con anestesia regional, clasificación ASA II"
+        }
       });
-
       if (error) {
         console.error("Error invoking function:", error);
         throw error;
       }
-
       if (data?.error) {
         throw new Error(data.error);
       }
-
       setSuggestedProcedures(data.suggestions || []);
       toast.success("✅ Sugerencias generadas exitosamente");
     } catch (error) {
@@ -68,32 +64,26 @@ const SurgicalIntervention = ({
       setIsLoadingSuggestions(false);
     }
   };
-
   const addToScheduled = (procedure: Procedure) => {
     setScheduledProcedures([...scheduledProcedures, procedure]);
     toast.success("✅ Procedimiento agregado a programados");
   };
-
   const addToPerformed = (procedure: Procedure) => {
     const newProcedure = {
       ...procedure,
       quantity: 1,
-      isPrimary: performedProcedures.length === 0,
+      isPrimary: performedProcedures.length === 0
     };
     setPerformedProcedures([...performedProcedures, newProcedure]);
     toast.success("✅ Procedimiento agregado a realizados");
   };
-
   const removeFromScheduled = (index: number) => {
     setScheduledProcedures(scheduledProcedures.filter((_, i) => i !== index));
   };
-
   const removeFromPerformed = (index: number) => {
     setPerformedProcedures(performedProcedures.filter((_, i) => i !== index));
   };
-
-  return (
-    <Card>
+  return <Card>
       <CardHeader className="bg-accent">
         <CardTitle className="text-primary flex items-center gap-2">
           <span>🔄</span>
@@ -102,134 +92,10 @@ const SurgicalIntervention = ({
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         {/* General Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg border-b pb-2">General</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="room">No. Sala</Label>
-              <Input id="room" defaultValue="234" className="mt-1" />
-            </div>
-            <div>
-              <Label htmlFor="startDate">Fecha hora de inicio</Label>
-              <Input id="startDate" type="datetime-local" defaultValue="2025-11-15T09:30" className="mt-1" />
-            </div>
-            <div>
-              <Label htmlFor="anesthesiaType">Tipo de anestesia</Label>
-              <Select defaultValue="regional">
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="regional">Regional</SelectItem>
-                  <SelectItem value="general">General</SelectItem>
-                  <SelectItem value="local">Local</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="classification">Clasificación ASA</Label>
-              <Select defaultValue="2">
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">ASA I</SelectItem>
-                  <SelectItem value="2">ASA II</SelectItem>
-                  <SelectItem value="3">ASA III</SelectItem>
-                  <SelectItem value="4">ASA IV</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="endDate">Fecha hora final</Label>
-              <Input id="endDate" type="datetime-local" defaultValue="2025-11-15T10:00" className="mt-1" />
-            </div>
-            <div className="flex items-center space-x-2 mt-6">
-              <Checkbox id="urgentSurgery" defaultChecked />
-              <Label htmlFor="urgentSurgery" className="text-sm font-normal">
-                Cirugía urgente
-              </Label>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Additional Information */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg border-b pb-2">Información adicional</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="prosthesis" />
-              <Label htmlFor="prosthesis" className="text-sm font-normal">
-                Prótesis / implantes
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="hip" />
-              <Label htmlFor="hip" className="text-sm font-normal">
-                Cx cadera
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="knee" />
-              <Label htmlFor="knee" className="text-sm font-normal">
-                Cx rodilla
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="laparotomy" />
-              <Label htmlFor="laparotomy" className="text-sm font-normal">
-                Laparotomía
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="openFracture" />
-              <Label htmlFor="openFracture" className="text-sm font-normal">
-                Fractura abierta
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="classification" />
-              <Label htmlFor="classification" className="text-sm font-normal">
-                Clasificación
-              </Label>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox id="antibiotics" defaultChecked />
-              <Label htmlFor="antibiotics" className="text-sm font-normal">
-                Profilaxis con antimicrobianos
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox id="contamination" defaultChecked />
-              <Label htmlFor="contamination" className="text-sm font-normal">
-                Herida cerrada sin contaminación
-              </Label>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="woundType">Tipo de heridas</Label>
-              <Select>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Seleccionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="clean">Limpia</SelectItem>
-                  <SelectItem value="contaminated">Contaminada</SelectItem>
-                  <SelectItem value="infected">Infectada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="adminTime">Hora administración</Label>
-              <Input id="adminTime" type="time" defaultValue="12:00" className="mt-1" />
-            </div>
-          </div>
-        </div>
+        
 
         {/* IPS Services */}
         <div className="space-y-4">
@@ -254,34 +120,22 @@ const SurgicalIntervention = ({
                   <Sparkles className="h-5 w-5 text-primary" />
                   Procedimientos Sugeridos por IA
                 </h4>
-                <Button
-                  onClick={generateSuggestions}
-                  disabled={isLoadingSuggestions}
-                  size="sm"
-                  className="gap-2"
-                >
-                  {isLoadingSuggestions ? (
-                    <>
+                <Button onClick={generateSuggestions} disabled={isLoadingSuggestions} size="sm" className="gap-2">
+                  {isLoadingSuggestions ? <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Generando...
-                    </>
-                  ) : (
-                    <>
+                    </> : <>
                       <Sparkles className="h-4 w-4" />
                       Generar Sugerencias con IA
-                    </>
-                  )}
+                    </>}
                 </Button>
               </div>
 
-              {isLoadingSuggestions ? (
-                <div className="space-y-2">
+              {isLoadingSuggestions ? <div className="space-y-2">
                   <Skeleton className="h-12 w-full" />
                   <Skeleton className="h-12 w-full" />
                   <Skeleton className="h-12 w-full" />
-                </div>
-              ) : suggestedProcedures.length > 0 ? (
-                <Table>
+                </div> : suggestedProcedures.length > 0 ? <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[100px]">Código</TableHead>
@@ -292,8 +146,7 @@ const SurgicalIntervention = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {suggestedProcedures.map((procedure, index) => (
-                      <TableRow key={index} className="bg-background">
+                    {suggestedProcedures.map((procedure, index) => <TableRow key={index} className="bg-background">
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
@@ -301,24 +154,16 @@ const SurgicalIntervention = ({
                           {procedure.reason}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => addToScheduled(procedure)}
-                          >
+                          <Button size="sm" variant="outline" onClick={() => addToScheduled(procedure)}>
                             Agregar <ArrowRight className="h-4 w-4 ml-1" />
                           </Button>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
-                </Table>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">
+                </Table> : <p className="text-center text-muted-foreground py-8">
                   Haz clic en el botón para generar sugerencias de procedimientos basadas en el
                   diagnóstico del paciente
-                </p>
-              )}
+                </p>}
             </div>
 
             {/* Scheduled Procedures */}
@@ -334,39 +179,25 @@ const SurgicalIntervention = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {scheduledProcedures.length > 0 ? (
-                    scheduledProcedures.map((procedure, index) => (
-                      <TableRow key={index} className="bg-accent">
+                  {scheduledProcedures.length > 0 ? scheduledProcedures.map((procedure, index) => <TableRow key={index} className="bg-accent">
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => addToPerformed(procedure)}
-                            >
+                            <Button size="sm" variant="outline" onClick={() => addToPerformed(procedure)}>
                               Realizar <ArrowRight className="h-4 w-4 ml-1" />
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => removeFromScheduled(index)}
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => removeFromScheduled(index)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
+                      </TableRow>) : <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                         No hay procedimientos programados
                       </TableCell>
-                    </TableRow>
-                  )}
+                    </TableRow>}
                 </TableBody>
               </Table>
             </div>
@@ -386,9 +217,7 @@ const SurgicalIntervention = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {performedProcedures.length > 0 ? (
-                    performedProcedures.map((procedure, index) => (
-                      <TableRow key={index} className="bg-primary/5">
+                  {performedProcedures.length > 0 ? performedProcedures.map((procedure, index) => <TableRow key={index} className="bg-primary/5">
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
@@ -397,23 +226,15 @@ const SurgicalIntervention = ({
                           {procedure.isPrimary ? "✓" : ""}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeFromPerformed(index)}
-                          >
+                          <Button size="sm" variant="ghost" onClick={() => removeFromPerformed(index)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
+                      </TableRow>) : <TableRow>
                       <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         No hay procedimientos realizados
                       </TableCell>
-                    </TableRow>
-                  )}
+                    </TableRow>}
                 </TableBody>
               </Table>
             </div>
@@ -421,33 +242,7 @@ const SurgicalIntervention = ({
         </div>
 
         {/* Diagnostics */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg border-b pb-2">Diagnósticos</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Pre-Operatorio</Label>
-              <Select defaultValue="a013">
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="a013">A013 - FIEBRE PARATIFOIDEA C</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Post-Operatorio</Label>
-              <Select defaultValue="a013">
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="a013">A013 - FIEBRE PARATIFOIDEA C</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-4 border-t">
@@ -458,8 +253,6 @@ const SurgicalIntervention = ({
           <Button variant="secondary">Ayuda</Button>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default SurgicalIntervention;
