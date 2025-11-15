@@ -31,7 +31,7 @@ Sugiere entre 3 y 5 procedimientos quirúrgicos apropiados y médicamente justif
 Para cada procedimiento, proporciona:
 1. Código del procedimiento (formato estándar médico)
 2. Nombre completo del procedimiento
-3. Vía de acceso (BILATERAL MULTIPLE, ABIERTA, LAPAROSCÓPICA, etc.)
+3. Vía de acceso (IGUAL VIA IGUAL ESPECIALISTA CIRUGIA MULTIPLE, ABIERTA, LAPAROSCÓPICA, etc.)
 4. Breve razón médica de por qué se sugiere este procedimiento
 
 Responde en formato JSON con esta estructura exacta:
