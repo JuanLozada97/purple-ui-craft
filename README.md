@@ -79,6 +79,28 @@ Archivos clave:
 - `src/components/ui/textarea.tsx`: añade overlay con botón de micrófono por campo.
 - `src/pages/SurgicalReport.tsx`: añade botón de dictado global.
 
+## Dictado con Gemini (en vivo y grabación)
+
+Para habilitar transcripción con Gemini 1.5 Flash desde el cliente:
+
+1. Instala la dependencia:
+   ```sh
+   npm i @google/generative-ai
+   ```
+2. Crea un archivo `.env` en la raíz con:
+   ```sh
+   VITE_GEMINI_API_KEY=tu_api_key
+   ```
+   También puedes copiar `./.env.example`:
+   ```sh
+   cp .env.example .env
+   ```
+3. Reinicia el servidor de desarrollo si estaba corriendo.
+
+Notas:
+- La clave estará expuesta en el cliente (solicitado). Para producción, considera un proxy/Edge Function.
+- Requiere permisos de micrófono del navegador.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/5e24e6bd-6898-43e6-8b67-7a92cf0ced91) and click on Share -> Publish.

@@ -104,8 +104,16 @@ const SurgicalIntervention = ({
           via: proc.via,
         })) || [];
 
-      setSuggestedProcedures(suggestions);
-      toast.success(`✅ ${suggestions.length} sugerencias generadas exitosamente`);
+      // Filtrar sugerencias que coincidan con procedimientos ya enviados (programados)
+      const scheduledCodes = new Set(
+        scheduledProcedures.map((p) => (p.code || "").trim().toLowerCase())
+      );
+      const filteredSuggestions = suggestions.filter(
+        (s: any) => !scheduledCodes.has((s.code || "").trim().toLowerCase())
+      );
+
+      setSuggestedProcedures(filteredSuggestions);
+      toast.success(`✅ ${filteredSuggestions.length} sugerencias generadas exitosamente`);
     } catch (error) {
       console.error("Error generating suggestions:", error);
       toast.error("❌ Error al generar sugerencias. Por favor, intenta de nuevo.");

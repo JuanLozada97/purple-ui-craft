@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import PatientInfo from "@/components/PatientInfo";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mic } from "lucide-react";
 import { mockPatients } from "@/data/patients";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useGeminiLiveChunks } from "@/hooks/useGeminiLiveChunks";
+import { useGeminiRecorder } from "@/hooks/useGeminiRecorder";
 import { appendToActiveTextarea } from "@/lib/appendToActiveTextarea";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -32,15 +34,71 @@ const SurgicalReport = () => {
     },
   });
 
-  if (error && error !== "unsupported") {
-    // Nota: render sincrónico, el toast se dispara en cada render si persiste el error.
-    // Como es raro que persista, lo dejamos simple. Alternativa: efecto con flag.
-    toast({
-      title: "Error de dictado",
-      description: `Ocurrió un error: ${error}`,
-      variant: "destructive",
-    });
-  }
+  // Gemini: En vivo por fragmentos
+  const {
+    isRecording: isLiveRecording,
+    start: startLive,
+    stop: stopLive,
+  } = useGeminiLiveChunks({
+    timesliceMs: 2000,
+    onPartial: (text) => {
+      const ok = appendToActiveTextarea(text + " ");
+      if (!ok) {
+        toast({
+          title: "No hay un campo activo",
+          description: "Haz clic dentro del área de texto antes de dictar.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (msg) =>
+      toast({
+        title: "Error de dictado (Gemini en vivo)",
+        description: msg,
+        variant: "destructive",
+      }),
+  });
+
+  // Gemini: Grabar y transcribir
+  const {
+    isRecording: isRecordingGemini,
+    isTranscribing,
+    error: geminiRecordError,
+    start: startRecord,
+    stopAndTranscribe,
+  } = useGeminiRecorder();
+
+  // Evitar toast spam: disparar una sola vez por valor de error
+  const lastWebSpeechErrorRef = useRef<string | null>(null);
+  const lastGeminiErrorRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (error && error !== "unsupported" && error !== lastWebSpeechErrorRef.current) {
+      toast({
+        title: "Error de dictado",
+        description: `Ocurrió un error: ${error}`,
+        variant: "destructive",
+      });
+      lastWebSpeechErrorRef.current = error;
+    }
+    if (!error) {
+      lastWebSpeechErrorRef.current = null;
+    }
+  }, [error, toast]);
+
+  useEffect(() => {
+    if (geminiRecordError && geminiRecordError !== lastGeminiErrorRef.current) {
+      toast({
+        title: "Error de dictado (Gemini grabación)",
+        description: geminiRecordError,
+        variant: "destructive",
+      });
+      lastGeminiErrorRef.current = geminiRecordError;
+    }
+    if (!geminiRecordError) {
+      lastGeminiErrorRef.current = null;
+    }
+  }, [geminiRecordError, toast]);
 
   const patient = mockPatients.find((p) => p.id === patientId);
   
@@ -75,26 +133,72 @@ const SurgicalReport = () => {
             <ArrowLeft className="h-4 w-4" />
             Volver al listado de pacientes
           </Button>
-          <Button
-            variant={isListening ? "default" : "outline"}
-            className="gap-2"
-            onClick={() => {
-              if (!isSupported) {
-                toast({
-                  title: "Dictado no soportado",
-                  description: "Tu navegador no soporta reconocimiento de voz.",
-                  variant: "destructive",
-                });
-                return;
-              }
-              // Si no está escuchando, inicia; si está, alterna para detener
-              if (!isListening) start();
-              else toggle();
-            }}
-          >
-            <Mic className="h-4 w-4" />
-            {isListening ? "Escuchando…" : "Dictar"}
-          </Button>
+          <div className="flex items-center gap-2 hidden">
+            {/* Web Speech existente */}
+            <Button
+              variant={isListening ? "default" : "outline"}
+              className="gap-2"
+              onClick={() => {
+                if (!isSupported) {
+                  toast({
+                    title: "Dictado no soportado",
+                    description: "Tu navegador no soporta reconocimiento de voz.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                if (!isListening) start();
+                else toggle();
+              }}
+            >
+              <Mic className="h-4 w-4" />
+              {isListening ? "Escuchando…" : "Dictar"}
+            </Button>
+
+            {/* Gemini en vivo */}
+            <Button
+              variant={isLiveRecording ? "default" : "outline"}
+              className="gap-2"
+              onClick={() => {
+                if (!isLiveRecording) startLive();
+                else stopLive();
+              }}
+            >
+              <Mic className="h-4 w-4" />
+              {isLiveRecording ? "En vivo (Gemini)..." : "En vivo (Gemini)"}
+            </Button>
+
+            {/* Gemini grabar y transcribir */}
+            <Button
+              variant={isRecordingGemini || isTranscribing ? "default" : "outline"}
+              className="gap-2"
+              disabled={isTranscribing}
+              onClick={async () => {
+                if (!isRecordingGemini) {
+                  startRecord();
+                } else {
+                  const text = await stopAndTranscribe();
+                  if (text && text.trim()) {
+                    const ok = appendToActiveTextarea(text.trim() + " ");
+                    if (!ok) {
+                      toast({
+                        title: "No hay un campo activo",
+                        description: "Haz clic dentro del área de texto antes de dictar.",
+                        variant: "destructive",
+                      });
+                    }
+                  }
+                }
+              }}
+            >
+              <Mic className="h-4 w-4" />
+              {isTranscribing
+                ? "Transcribiendo…"
+                : isRecordingGemini
+                ? "Grabando (Gemini)…"
+                : "Grabar y transcribir (Gemini)"}
+            </Button>
+          </div>
         </div>
 
         <PatientInfo patient={patient} />
