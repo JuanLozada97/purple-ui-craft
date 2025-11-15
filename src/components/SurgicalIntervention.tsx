@@ -91,14 +91,14 @@ const SurgicalIntervention = ({
     // Validate procedure data
     const validationResult = procedureSchema.safeParse(procedure);
 
-    if (!validationResult.success) {
-      toast.error("El procedimiento tiene datos inválidos");
-      console.error("Validation errors:", validationResult.error.errors);
-      return;
-    }
+  if (!validationResult.success) {
+    toast.error("El procedimiento tiene datos inválidos");
+    console.error("Validation errors:", validationResult.error.errors);
+    return;
+  }
 
-    setScheduledProcedures([...scheduledProcedures, validationResult.data]);
-    toast.success("✅ Procedimiento agregado a programados");
+  setScheduledProcedures([...scheduledProcedures, validationResult.data as Procedure]);
+  toast.success("✅ Procedimiento agregado a programados");
   };
 
   const addToPerformed = (procedure: Procedure) => {
@@ -111,14 +111,14 @@ const SurgicalIntervention = ({
     // Validate procedure data
     const validationResult = procedureSchema.safeParse(newProcedure);
 
-    if (!validationResult.success) {
-      toast.error("El procedimiento tiene datos inválidos");
-      console.error("Validation errors:", validationResult.error.errors);
-      return;
-    }
+  if (!validationResult.success) {
+    toast.error("El procedimiento tiene datos inválidos");
+    console.error("Validation errors:", validationResult.error.errors);
+    return;
+  }
 
-    setPerformedProcedures([...performedProcedures, validationResult.data]);
-    toast.success("✅ Procedimiento agregado a realizados");
+  setPerformedProcedures([...performedProcedures, validationResult.data as Procedure]);
+  toast.success("✅ Procedimiento agregado a realizados");
   };
   const removeFromScheduled = (index: number) => {
     setScheduledProcedures(scheduledProcedures.filter((_, i) => i !== index));
