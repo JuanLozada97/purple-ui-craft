@@ -31,9 +31,7 @@ const SurgicalDescription = ({
   setDetalleQuirurgico,
   complicaciones,
   setComplicaciones,
-  suggestedProcedures,
   scheduledProcedures,
-  performedProcedures,
 }: SurgicalDescriptionProps) => {
   const [isSending, setIsSending] = useState(false);
   const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
