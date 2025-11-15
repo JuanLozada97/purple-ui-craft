@@ -3,7 +3,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-const SurgicalDescription = () => {
+interface SurgicalDescriptionProps {
+  onNext?: () => void;
+}
+
+const SurgicalDescription = ({ onNext }: SurgicalDescriptionProps) => {
   return (
     <Card>
       <CardHeader className="bg-accent">
@@ -51,7 +55,7 @@ const SurgicalDescription = () => {
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline">← Atrás</Button>
-          <Button>Siguiente →</Button>
+          <Button onClick={onNext}>Siguiente →</Button>
           <Button variant="outline">Salir</Button>
           <Button variant="secondary">Ayuda</Button>
         </div>

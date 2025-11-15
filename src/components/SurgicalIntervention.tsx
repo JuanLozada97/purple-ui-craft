@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, ArrowRight } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SurgicalIntervention = () => {
   return (
@@ -163,13 +162,9 @@ const SurgicalIntervention = () => {
             </div>
           </div>
 
-          <Tabs defaultValue="performed" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="performed">Procedimientos realizados</TabsTrigger>
-              <TabsTrigger value="scheduled">Procedimientos programados</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="performed" className="mt-4">
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-semibold text-base mb-3">Procedimientos realizados</h4>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -190,9 +185,10 @@ const SurgicalIntervention = () => {
                   </TableRow>
                 </TableBody>
               </Table>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="scheduled" className="mt-4">
+            <div>
+              <h4 className="font-semibold text-base mb-3">Procedimientos programados</h4>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -215,8 +211,8 @@ const SurgicalIntervention = () => {
                   </TableRow>
                 </TableBody>
               </Table>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
 
         {/* Diagnostics */}
