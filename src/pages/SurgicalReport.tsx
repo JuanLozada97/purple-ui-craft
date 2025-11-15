@@ -7,11 +7,14 @@ import SurgicalDescription from "@/components/SurgicalDescription";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { mockPatients } from "@/data/patients";
 
 const SurgicalReport = () => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("description");
+
+  const patient = mockPatients.find((p) => p.id === patientId);
   
   // Estados de Descripción Quirúrgica
   const [hallazgos, setHallazgos] = useState("");
@@ -44,7 +47,7 @@ const SurgicalReport = () => {
           Volver al listado de pacientes
         </Button>
 
-        <PatientInfo />
+        <PatientInfo patient={patient} />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">

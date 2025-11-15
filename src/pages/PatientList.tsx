@@ -5,90 +5,60 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, User, Users } from "lucide-react";
+import { FileText, Search, User, Users, Baby, Feather, Shield, Droplets, Wind } from "lucide-react";
 import { Patient } from "@/types/patient";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { mockPatients } from "@/data/patients";
 
-// Mock data - en producción esto vendría de la API
-const mockPatients: Patient[] = [
-  {
-    id: "1",
-    poblacion: "Población",
-    tipoPobl: "Recupera...",
-    cama: "519Z9390",
-    identificacion: "519Z9390",
-    nombre: "MARIA GLADYS RENDON AGUDELO",
-    edad: 61,
-    entidad: "ES0064-NUEVA EPS  S .A",
-    diagnostico: "ORTOPEDIA ONCOLOGICA",
-    especialidad: "ORTOPEDIA ONCOLOGICA",
-    tipoEstancia: "QUIRURGI",
-  },
-  {
-    id: "2",
-    poblacion: "Población",
-    tipoPobl: "cam344",
-    cama: "761280",
-    identificacion: "761280",
-    nombre: "DANIEL NEIL LINFORD",
-    edad: 42,
-    entidad: "ES0037-EPS Y MEDICINA PREPAGA...",
-    diagnostico: "C500-TUMOR MALIGNO DEL PEZON Y AR...",
-    especialidad: "ONCOLOGIA CLINICA",
-    tipoEstancia: "NO ONCOL",
-  },
-  {
-    id: "3",
-    poblacion: "Población",
-    tipoPobl: "RIPS",
-    cama: "13863003",
-    identificacion: "13863003",
-    nombre: "MARCOS STIVEN CORDOBA MUÑOZ",
-    edad: 29,
-    entidad: "ES0002-ALIANSALUD EPS S.A PRU...",
-    diagnostico: "C250-TUMOR MALIGNO DE LA CABEZA D...",
-    especialidad: "ONCOLOGIA CLINICA",
-    tipoEstancia: "NO ONCOL",
-  },
-  {
-    id: "4",
-    poblacion: "Población",
-    tipoPobl: "Quirófano 8",
-    cama: "12000251",
-    identificacion: "12000251",
-    nombre: "PEPITO CARRERA",
-    edad: 30,
-    entidad: "999-PARTICULARES",
-    diagnostico: "J069-INFECCION AGUDA DE LAS VIAS R...",
-    especialidad: "ONCOLOGIA CLINICA",
-    tipoEstancia: "QUIRURGI",
-  },
-  {
-    id: "5",
-    poblacion: "Población",
-    tipoPobl: "Quirófano 7",
-    cama: "100012514",
-    identificacion: "100012514",
-    nombre: "JONATHAN GEORGE TORRES SAGANDVE",
-    edad: 36,
-    entidad: "ES0037-EPS Y MEDICINA PREPAGA...",
-    diagnostico: "A010-FIEBRE TIFOIDEA",
-    especialidad: "ONCOLOGIA CLINICA",
-    tipoEstancia: "NO ONCOL",
-  },
-  {
-    id: "6",
-    poblacion: "Población",
-    tipoPobl: "Quirófano 6",
-    cama: "1000613",
-    identificacion: "1000613",
-    nombre: "JOSE GOODFEEL BERNAL OLARTE",
-    edad: 67,
-    entidad: "ES0037-EPS Y MEDICINA PREPAGA...",
-    diagnostico: "A010-FIEBRE TIFOIDEA",
-    especialidad: "NEUROPSICOLOGIA",
-    tipoEstancia: "QUIRURGI",
-  },
-];
+const PopulationIcon = ({ tipo }: { tipo: string }) => {
+  const iconMap: { [key: string]: React.ReactNode } = {
+    "Maternas": <Baby className="h-5 w-5 text-pink-500" />,
+    "Poblacion general": <Users className="h-5 w-5 text-blue-500" />,
+    "Indigenas": <Feather className="h-5 w-5 text-yellow-600" />,
+  };
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>{iconMap[tipo] || <Users className="h-5 w-5 text-gray-500" />}</TooltipTrigger>
+        <TooltipContent>
+          <p>{tipo}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const IsolationIcon = ({ tipo }: { tipo?: string }) => {
+  if (!tipo || tipo === "Sin aislamiento") {
+    return null;
+  }
+
+  const colorMap: { [key: string]: string } = {
+    "Contacto": "bg-yellow-500",
+    "Respiratorio": "bg-blue-500",
+    "Gotas": "bg-green-500",
+  };
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <div className={`h-4 w-4 rounded-full ${colorMap[tipo] || 'bg-gray-400'}`} />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Aislamiento por {tipo}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 
 const PatientList = () => {
   const navigate = useNavigate();
@@ -103,19 +73,6 @@ const PatientList = () => {
 
   const handlePatientClick = (patientId: string) => {
     navigate(`/surgical-report/${patientId}`);
-  };
-
-  const getStatusBadgeColor = (tipo: string) => {
-    if (tipo.includes("Quirófano")) return "default";
-    if (tipo.includes("Recupera")) return "secondary";
-    return "outline";
-  };
-
-  const getStayTypeBadgeColor = (tipo: string) => {
-    if (tipo === "QUIRURGI") return "default";
-    if (tipo === "NO ONCOL") return "secondary";
-    if (tipo === "CUIDADO") return "outline";
-    return "outline";
   };
 
   return (
@@ -173,7 +130,6 @@ const PatientList = () => {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">#</TableHead>
-                    <TableHead className="font-semibold">Población</TableHead>
                     <TableHead className="font-semibold">Tipo Pobl.</TableHead>
                     <TableHead className="font-semibold">Cama</TableHead>
                     <TableHead className="font-semibold">Identificación</TableHead>
@@ -182,14 +138,14 @@ const PatientList = () => {
                     <TableHead className="font-semibold">Entidad</TableHead>
                     <TableHead className="font-semibold">Diagnóstico</TableHead>
                     <TableHead className="font-semibold">Especialidad</TableHead>
-                    <TableHead className="font-semibold">Tipo Estancia</TableHead>
+                    <TableHead className="font-semibold">Aislamiento</TableHead>
                     <TableHead className="font-semibold">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPatients.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                         <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
                         <p>No se encontraron pacientes</p>
                       </TableCell>
@@ -203,14 +159,7 @@ const PatientList = () => {
                       >
                         <TableCell className="font-medium">{index + 1}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="font-normal">
-                            {patient.poblacion}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeColor(patient.tipoPobl)}>
-                            {patient.tipoPobl}
-                          </Badge>
+                          <PopulationIcon tipo={patient.tipoPobl} />
                         </TableCell>
                         <TableCell className="font-mono text-sm">{patient.cama}</TableCell>
                         <TableCell className="font-mono text-sm">{patient.identificacion}</TableCell>
@@ -228,9 +177,7 @@ const PatientList = () => {
                         </TableCell>
                         <TableCell className="text-sm">{patient.especialidad}</TableCell>
                         <TableCell>
-                          <Badge variant={getStayTypeBadgeColor(patient.tipoEstancia)}>
-                            {patient.tipoEstancia}
-                          </Badge>
+                          <IsolationIcon tipo={patient.aislamiento} />
                         </TableCell>
                         <TableCell>
                           <Button
