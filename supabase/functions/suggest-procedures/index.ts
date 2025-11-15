@@ -5,6 +5,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Sanitize input for AI prompts to prevent injection attacks
+ */
+function sanitizeForAIPrompt(input: string | undefined | null, maxLength: number = 500): string {
+  if (!input) return "No especificado";
+
+  // Remove control characters
+  let sanitized = input.replace(/[\x00-\x1F\x7F]/g, '');
+
+  // Remove potentially dangerous sequences
+  sanitized = sanitized
+    .replace(/[<>{}[\]]/g, '')
+    .replace(/([!?.]){3,}/g, '$1$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Limit length
+  sanitized = sanitized.substring(0, maxLength);
+
+  return sanitized || "No especificado";
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -18,13 +40,21 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Generating procedure suggestions for:", { diagnosis, surgeryType });
+    // Sanitize inputs to prevent prompt injection attacks
+    const sanitizedDiagnosis = sanitizeForAIPrompt(diagnosis, 200);
+    const sanitizedSurgeryType = sanitizeForAIPrompt(surgeryType, 100);
+    const sanitizedPatientInfo = sanitizeForAIPrompt(patientInfo, 300);
+
+    console.log("Generating procedure suggestions for:", {
+      diagnosis: sanitizedDiagnosis,
+      surgeryType: sanitizedSurgeryType
+    });
 
     const prompt = `Eres un asistente médico experto en cirugía. Basándote en la siguiente información:
 
-- Diagnóstico pre-operatorio: ${diagnosis || "No especificado"}
-- Tipo de cirugía: ${surgeryType || "No especificado"}
-- Información adicional: ${patientInfo || "No especificada"}
+- Diagnóstico pre-operatorio: ${sanitizedDiagnosis}
+- Tipo de cirugía: ${sanitizedSurgeryType}
+- Información adicional: ${sanitizedPatientInfo}
 
 Sugiere entre 3 y 5 procedimientos quirúrgicos apropiados y médicamente justificados.
 

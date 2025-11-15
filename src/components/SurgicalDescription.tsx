@@ -5,10 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Procedure } from "./SurgicalIntervention";
 import { cn } from "@/lib/utils";
 import ValidationAlerts from "./ValidationAlerts";
 import { ValidationResponse } from "@/types/validation";
+import { surgicalDescriptionSchema, type SurgicalDescriptionFormData } from "@/schemas/surgical";
+import { sanitizeMedicalText } from "@/lib/sanitize";
 
 interface SurgicalDescriptionProps {
   onNext?: () => void;
@@ -36,6 +40,28 @@ const SurgicalDescription = ({
   const [countdown, setCountdown] = useState<number | null>(null);
   const [canProceed, setCanProceed] = useState(true);
 
+  // Initialize form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<SurgicalDescriptionFormData>({
+    resolver: zodResolver(surgicalDescriptionSchema),
+    defaultValues: {
+      hallazgos,
+      detalleQuirurgico,
+      complicaciones,
+    },
+  });
+
+  // Sync form values with parent state
+  useEffect(() => {
+    setValue("hallazgos", hallazgos);
+    setValue("detalleQuirurgico", detalleQuirurgico);
+    setValue("complicaciones", complicaciones);
+  }, [hallazgos, detalleQuirurgico, complicaciones, setValue]);
+
   // Countdown effect
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
@@ -55,28 +81,35 @@ const SurgicalDescription = ({
     return validationData.alertas.some((alert) => alert.campo === fieldName);
   };
 
-  const handleNext = async () => {
+  const handleNext = async (data: SurgicalDescriptionFormData) => {
     setIsSending(true);
     setValidationData(null); // Clear previous alerts
 
     try {
-      const webhookUrl = "https://n8n.bohorquez.cc/webhook/d595b1e7-d764-463a-8bad-0f0f6c3a5a24";
+      const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+
+      if (!webhookUrl) {
+        throw new Error("La configuración del webhook no está disponible");
+      }
+
+      // Sanitize inputs before sending
+      const sanitizedData = {
+        hallazgos: sanitizeMedicalText(data.hallazgos),
+        "Detalle quirurgico": sanitizeMedicalText(data.detalleQuirurgico),
+        complicaciones: sanitizeMedicalText(data.complicaciones),
+        procedimientos_programados: scheduledProcedures.map((proc) => ({
+          codigo: proc.code,
+          descripcion: proc.name,
+          via: proc.via,
+        })),
+      };
 
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          hallazgos,
-          "Detalle quirurgico": detalleQuirurgico,
-          complicaciones,
-          procedimientos_programados: scheduledProcedures.map((proc) => ({
-            codigo: proc.code,
-            descripcion: proc.name,
-            via: proc.via,
-          })),
-        }),
+        body: JSON.stringify(sanitizedData),
       });
 
       if (!response.ok) {
@@ -151,21 +184,28 @@ const SurgicalDescription = ({
           <div className="space-y-2">
             <Label
               htmlFor="findings"
-              className={cn("text-base font-semibold text-medical-blue", hasAlert("hallazgos") && "text-destructive")}
+              className={cn(
+                "text-base font-semibold text-medical-blue",
+                (hasAlert("hallazgos") || errors.hallazgos) && "text-destructive"
+              )}
             >
               Hallazgo operatorio
-              {hasAlert("hallazgos") && <span className="ml-2">⚠️</span>}
+              {(hasAlert("hallazgos") || errors.hallazgos) && <span className="ml-2">⚠️</span>}
             </Label>
             <Textarea
               id="findings"
-              value={hallazgos}
-              onChange={(e) => setHallazgos(e.target.value)}
+              {...register("hallazgos", {
+                onChange: (e) => setHallazgos(e.target.value),
+              })}
               placeholder="Describa los hallazgos operatorios..."
               className={cn(
                 "min-h-[200px] resize-y",
-                hasAlert("hallazgos") && "border-destructive border-2 focus-visible:ring-destructive",
+                (hasAlert("hallazgos") || errors.hallazgos) && "border-destructive border-2 focus-visible:ring-destructive",
               )}
             />
+            {errors.hallazgos && (
+              <p className="text-sm text-destructive">{errors.hallazgos.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -173,22 +213,26 @@ const SurgicalDescription = ({
               htmlFor="details"
               className={cn(
                 "text-base font-semibold text-medical-blue",
-                hasAlert("Detalle quirurgico") && "text-destructive",
+                (hasAlert("Detalle quirurgico") || errors.detalleQuirurgico) && "text-destructive",
               )}
             >
               Detalle quirúrgico - procedimientos
-              {hasAlert("Detalle quirurgico") && <span className="ml-2">⚠️</span>}
+              {(hasAlert("Detalle quirurgico") || errors.detalleQuirurgico) && <span className="ml-2">⚠️</span>}
             </Label>
             <Textarea
               id="details"
-              value={detalleQuirurgico}
-              onChange={(e) => setDetalleQuirurgico(e.target.value)}
+              {...register("detalleQuirurgico", {
+                onChange: (e) => setDetalleQuirurgico(e.target.value),
+              })}
               placeholder="Describa el detalle quirúrgico..."
               className={cn(
                 "min-h-[200px] resize-y",
-                hasAlert("Detalle quirurgico") && "border-destructive border-2 focus-visible:ring-destructive",
+                (hasAlert("Detalle quirurgico") || errors.detalleQuirurgico) && "border-destructive border-2 focus-visible:ring-destructive",
               )}
             />
+            {errors.detalleQuirurgico && (
+              <p className="text-sm text-destructive">{errors.detalleQuirurgico.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -196,22 +240,26 @@ const SurgicalDescription = ({
               htmlFor="complications"
               className={cn(
                 "text-base font-semibold text-medical-blue",
-                hasAlert("complicaciones") && "text-destructive",
+                (hasAlert("complicaciones") || errors.complicaciones) && "text-destructive",
               )}
             >
               Complicaciones
-              {hasAlert("complicaciones") && <span className="ml-2">⚠️</span>}
+              {(hasAlert("complicaciones") || errors.complicaciones) && <span className="ml-2">⚠️</span>}
             </Label>
             <Textarea
               id="complications"
-              value={complicaciones}
-              onChange={(e) => setComplicaciones(e.target.value)}
+              {...register("complicaciones", {
+                onChange: (e) => setComplicaciones(e.target.value),
+              })}
               placeholder="Describa las complicaciones si las hubo..."
               className={cn(
                 "min-h-[200px] resize-y",
-                hasAlert("complicaciones") && "border-destructive border-2 focus-visible:ring-destructive",
+                (hasAlert("complicaciones") || errors.complicaciones) && "border-destructive border-2 focus-visible:ring-destructive",
               )}
             />
+            {errors.complicaciones && (
+              <p className="text-sm text-destructive">{errors.complicaciones.message}</p>
+            )}
           </div>
         </div>
 
@@ -219,7 +267,7 @@ const SurgicalDescription = ({
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline">← Atrás</Button>
           <Button
-            onClick={handleNext}
+            onClick={handleSubmit(handleNext)}
             disabled={isSending || !canProceed || countdown !== null}
             className={cn(countdown !== null && "opacity-50 cursor-not-allowed")}
           >

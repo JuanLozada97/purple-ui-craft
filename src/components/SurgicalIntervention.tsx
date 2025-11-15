@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, ArrowRight, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { aiSuggestionRequestSchema, procedureSchema } from "@/schemas/surgical";
+import { sanitizeForAIPrompt } from "@/lib/sanitize";
 export interface Procedure {
   code: string;
   name: string;
@@ -43,21 +45,24 @@ const SurgicalIntervention = ({
   const generateSuggestions = async () => {
     setIsLoadingSuggestions(true);
     try {
+      // Sanitize inputs before sending to webhook
+      const sanitizedPayload = {
+        hallazgos: sanitizeForAIPrompt(hallazgos, 500),
+        "Detalle quirurgico": sanitizeForAIPrompt(detalleQuirurgico, 500),
+        complicaciones: sanitizeForAIPrompt(complicaciones, 500),
+        procedimientos_programados: scheduledProcedures.map((proc) => ({
+          codigo: proc.code,
+          descripcion: proc.name,
+          via: proc.via,
+        })),
+      };
+
       const response = await fetch("https://n8n.bohorquez.cc/webhook/7fe060e2-01c5-404b-b7de-d6e5dc421d7a", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          hallazgos,
-          "Detalle quirurgico": detalleQuirurgico,
-          complicaciones,
-          procedimientos_programados: scheduledProcedures.map((proc) => ({
-            codigo: proc.code,
-            descripcion: proc.name,
-            via: proc.via,
-          })),
-        }),
+        body: JSON.stringify(sanitizedPayload),
       });
 
       if (!response.ok) {
@@ -83,16 +88,36 @@ const SurgicalIntervention = ({
     }
   };
   const addToScheduled = (procedure: Procedure) => {
-    setScheduledProcedures([...scheduledProcedures, procedure]);
+    // Validate procedure data
+    const validationResult = procedureSchema.safeParse(procedure);
+
+    if (!validationResult.success) {
+      toast.error("El procedimiento tiene datos inválidos");
+      console.error("Validation errors:", validationResult.error.errors);
+      return;
+    }
+
+    setScheduledProcedures([...scheduledProcedures, validationResult.data]);
     toast.success("✅ Procedimiento agregado a programados");
   };
+
   const addToPerformed = (procedure: Procedure) => {
     const newProcedure = {
       ...procedure,
       quantity: 1,
       isPrimary: performedProcedures.length === 0
     };
-    setPerformedProcedures([...performedProcedures, newProcedure]);
+
+    // Validate procedure data
+    const validationResult = procedureSchema.safeParse(newProcedure);
+
+    if (!validationResult.success) {
+      toast.error("El procedimiento tiene datos inválidos");
+      console.error("Validation errors:", validationResult.error.errors);
+      return;
+    }
+
+    setPerformedProcedures([...performedProcedures, validationResult.data]);
     toast.success("✅ Procedimiento agregado a realizados");
   };
   const removeFromScheduled = (index: number) => {
