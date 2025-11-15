@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,9 +6,85 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, Sparkles, Loader2, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Procedure {
+  code: string;
+  name: string;
+  via: string;
+  reason?: string;
+  quantity?: number;
+  isPrimary?: boolean;
+}
 
 const SurgicalIntervention = () => {
+  const [suggestedProcedures, setSuggestedProcedures] = useState<Procedure[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [scheduledProcedures, setScheduledProcedures] = useState<Procedure[]>([
+    {
+      code: "471102",
+      name: "471102 - APENDICECTOMIA VIA ABIERTA",
+      via: "BILATERAL MULTIPLE",
+    },
+  ]);
+  const [performedProcedures, setPerformedProcedures] = useState<Procedure[]>([]);
+
+  const generateSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("suggest-procedures", {
+        body: {
+          diagnosis: "A013 - FIEBRE PARATIFOIDEA C",
+          surgeryType: "Cirugía urgente",
+          patientInfo: "Paciente con anestesia regional, clasificación ASA II",
+        },
+      });
+
+      if (error) {
+        console.error("Error invoking function:", error);
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setSuggestedProcedures(data.suggestions || []);
+      toast.success("✅ Sugerencias generadas exitosamente");
+    } catch (error) {
+      console.error("Error generating suggestions:", error);
+      toast.error("❌ Error al generar sugerencias. Por favor, intenta de nuevo.");
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const addToScheduled = (procedure: Procedure) => {
+    setScheduledProcedures([...scheduledProcedures, procedure]);
+    toast.success("✅ Procedimiento agregado a programados");
+  };
+
+  const addToPerformed = (procedure: Procedure) => {
+    const newProcedure = {
+      ...procedure,
+      quantity: 1,
+      isPrimary: performedProcedures.length === 0,
+    };
+    setPerformedProcedures([...performedProcedures, newProcedure]);
+    toast.success("✅ Procedimiento agregado a realizados");
+  };
+
+  const removeFromScheduled = (index: number) => {
+    setScheduledProcedures(scheduledProcedures.filter((_, i) => i !== index));
+  };
+
+  const removeFromPerformed = (index: number) => {
+    setPerformedProcedures(performedProcedures.filter((_, i) => i !== index));
+  };
+
   return (
     <Card>
       <CardHeader className="bg-accent">
@@ -163,52 +240,173 @@ const SurgicalIntervention = () => {
           </div>
 
           <div className="space-y-6">
+            {/* AI Suggested Procedures Section */}
+            <div className="bg-gradient-to-r from-primary/5 to-accent p-4 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Procedimientos Sugeridos por IA
+                </h4>
+                <Button
+                  onClick={generateSuggestions}
+                  disabled={isLoadingSuggestions}
+                  size="sm"
+                  className="gap-2"
+                >
+                  {isLoadingSuggestions ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Generar Sugerencias con IA
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {isLoadingSuggestions ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : suggestedProcedures.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Código</TableHead>
+                      <TableHead>Procedimiento sugerido</TableHead>
+                      <TableHead>Vía</TableHead>
+                      <TableHead>Razón</TableHead>
+                      <TableHead className="w-[100px]">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {suggestedProcedures.map((procedure, index) => (
+                      <TableRow key={index} className="bg-background">
+                        <TableCell className="font-medium">{procedure.code}</TableCell>
+                        <TableCell>{procedure.name}</TableCell>
+                        <TableCell>{procedure.via}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {procedure.reason}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => addToScheduled(procedure)}
+                          >
+                            Agregar <ArrowRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  Haz clic en el botón para generar sugerencias de procedimientos basadas en el
+                  diagnóstico del paciente
+                </p>
+              )}
+            </div>
+
+            {/* Scheduled Procedures */}
             <div>
-              <h4 className="font-semibold text-base mb-3">Procedimientos realizados</h4>
+              <h4 className="font-semibold text-base mb-3">Procedimientos Programados</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Código</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead>Vía</TableHead>
+                    <TableHead className="w-[150px]">Acción</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scheduledProcedures.length > 0 ? (
+                    scheduledProcedures.map((procedure, index) => (
+                      <TableRow key={index} className="bg-accent">
+                        <TableCell className="font-medium">{procedure.code}</TableCell>
+                        <TableCell>{procedure.name}</TableCell>
+                        <TableCell>{procedure.via}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => addToPerformed(procedure)}
+                            >
+                              Realizar <ArrowRight className="h-4 w-4 ml-1" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromScheduled(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        No hay procedimientos programados
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Performed Procedures */}
+            <div>
+              <h4 className="font-semibold text-base mb-3">Procedimientos Realizados</h4>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[100px]">Código</TableHead>
                     <TableHead>Procedimiento</TableHead>
                     <TableHead>Vía</TableHead>
-                    <TableHead>Cantidad</TableHead>
-                    <TableHead>Principal</TableHead>
+                    <TableHead className="w-[100px]">Cantidad</TableHead>
+                    <TableHead className="w-[100px]">Principal</TableHead>
+                    <TableHead className="w-[80px]">Acción</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow className="bg-primary/5">
-                    <TableCell className="font-medium">471102</TableCell>
-                    <TableCell>471102 - APENDICECTOMIA VIA ABIERTA</TableCell>
-                    <TableCell>BILATERAL MULTIPLE</TableCell>
-                    <TableCell>1</TableCell>
-                    <TableCell className="text-center">✓</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-base mb-3">Procedimientos programados</h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Procedimiento</TableHead>
-                    <TableHead>Descripción relacionada</TableHead>
-                    <TableHead>Vía</TableHead>
-                    <TableHead>Acción</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="bg-accent">
-                    <TableCell className="font-medium">471102</TableCell>
-                    <TableCell>471102 - APENDICECTOMIA VIA ABIERTA</TableCell>
-                    <TableCell>BILATERAL MUL...</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline">
-                        Agregar <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  {performedProcedures.length > 0 ? (
+                    performedProcedures.map((procedure, index) => (
+                      <TableRow key={index} className="bg-primary/5">
+                        <TableCell className="font-medium">{procedure.code}</TableCell>
+                        <TableCell>{procedure.name}</TableCell>
+                        <TableCell>{procedure.via}</TableCell>
+                        <TableCell>{procedure.quantity}</TableCell>
+                        <TableCell className="text-center">
+                          {procedure.isPrimary ? "✓" : ""}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeFromPerformed(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        No hay procedimientos realizados
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
