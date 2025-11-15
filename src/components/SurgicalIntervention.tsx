@@ -7,7 +7,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, ArrowRight, Sparkles, Loader2, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 export interface Procedure {
@@ -25,6 +24,9 @@ interface SurgicalInterventionProps {
   setScheduledProcedures: (value: Procedure[]) => void;
   performedProcedures: Procedure[];
   setPerformedProcedures: (value: Procedure[]) => void;
+  hallazgos: string;
+  detalleQuirurgico: string;
+  complicaciones: string;
 }
 const SurgicalIntervention = ({
   suggestedProcedures,
@@ -32,31 +34,47 @@ const SurgicalIntervention = ({
   scheduledProcedures,
   setScheduledProcedures,
   performedProcedures,
-  setPerformedProcedures
+  setPerformedProcedures,
+  hallazgos,
+  detalleQuirurgico,
+  complicaciones
 }: SurgicalInterventionProps) => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const generateSuggestions = async () => {
     setIsLoadingSuggestions(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke("suggest-procedures", {
-        body: {
-          diagnosis: "A013 - FIEBRE PARATIFOIDEA C",
-          surgeryType: "Cirugía urgente",
-          patientInfo: "Paciente con anestesia regional, clasificación ASA II"
-        }
+      const response = await fetch("https://n8n.bohorquez.cc/webhook/7fe060e2-01c5-404b-b7de-d6e5dc421d7a", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          hallazgos,
+          "Detalle quirurgico": detalleQuirurgico,
+          complicaciones,
+          procedimientos_programados: scheduledProcedures.map((proc) => ({
+            codigo: proc.code,
+            descripcion: proc.name,
+            via: proc.via,
+          })),
+        }),
       });
-      if (error) {
-        console.error("Error invoking function:", error);
-        throw error;
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-      setSuggestedProcedures(data.suggestions || []);
-      toast.success("✅ Sugerencias generadas exitosamente");
+
+      const data = await response.json();
+      
+      // Mapear la respuesta del webhook al formato esperado
+      const suggestions = data.procedimientos_sugeridos?.map((proc: any) => ({
+        code: proc.codigo,
+        name: proc.descripcion,
+        via: proc.via,
+      })) || [];
+
+      setSuggestedProcedures(suggestions);
+      toast.success(`✅ ${suggestions.length} sugerencias generadas exitosamente`);
     } catch (error) {
       console.error("Error generating suggestions:", error);
       toast.error("❌ Error al generar sugerencias. Por favor, intenta de nuevo.");
