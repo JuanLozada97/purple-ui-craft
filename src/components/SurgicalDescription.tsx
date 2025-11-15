@@ -5,22 +5,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Procedure } from "./SurgicalIntervention";
 
 interface SurgicalDescriptionProps {
   onNext?: () => void;
+  hallazgos: string;
+  setHallazgos: (value: string) => void;
+  detalleQuirurgico: string;
+  setDetalleQuirurgico: (value: string) => void;
+  complicaciones: string;
+  setComplicaciones: (value: string) => void;
+  suggestedProcedures: Procedure[];
+  scheduledProcedures: Procedure[];
+  performedProcedures: Procedure[];
 }
 
-const SurgicalDescription = ({ onNext }: SurgicalDescriptionProps) => {
-  const [hallazgos, setHallazgos] = useState("");
-  const [detalleQuirurgico, setDetalleQuirurgico] = useState("");
-  const [complicaciones, setComplicaciones] = useState("");
+const SurgicalDescription = ({ 
+  onNext,
+  hallazgos,
+  setHallazgos,
+  detalleQuirurgico,
+  setDetalleQuirurgico,
+  complicaciones,
+  setComplicaciones,
+  suggestedProcedures,
+  scheduledProcedures,
+  performedProcedures,
+}: SurgicalDescriptionProps) => {
   const [isSending, setIsSending] = useState(false);
 
   const handleNext = async () => {
     setIsSending(true);
 
     try {
-      const webhookUrl = "https://n8n.bohorquez.cc/webhook-test/7fe060e2-01c5-404b-b7de-d6e5dc421d7a";
+      const webhookUrl = "https://n8n.bohorquez.cc/webhook-test/d595b1e7-d764-463a-8bad-0f0f6c3a5a24";
 
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -31,6 +49,24 @@ const SurgicalDescription = ({ onNext }: SurgicalDescriptionProps) => {
           hallazgos,
           "Detalle quirurgico": detalleQuirurgico,
           complicaciones,
+          procedimientos_sugeridos: suggestedProcedures.map(proc => ({
+            codigo: proc.code,
+            descripcion: proc.name,
+            via: proc.via,
+            razon: proc.reason || ""
+          })),
+          procedimientos_programados: scheduledProcedures.map(proc => ({
+            codigo: proc.code,
+            descripcion: proc.name,
+            via: proc.via
+          })),
+          procedimientos_realizados: performedProcedures.map(proc => ({
+            codigo: proc.code,
+            descripcion: proc.name,
+            via: proc.via,
+            cantidad: proc.quantity || 1,
+            es_principal: proc.isPrimary || false
+          }))
         }),
       });
 
