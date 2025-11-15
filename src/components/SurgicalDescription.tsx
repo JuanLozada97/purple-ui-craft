@@ -18,9 +18,7 @@ interface SurgicalDescriptionProps {
   setDetalleQuirurgico: (value: string) => void;
   complicaciones: string;
   setComplicaciones: (value: string) => void;
-  suggestedProcedures: Procedure[];
   scheduledProcedures: Procedure[];
-  performedProcedures: Procedure[];
 }
 
 const SurgicalDescription = ({
