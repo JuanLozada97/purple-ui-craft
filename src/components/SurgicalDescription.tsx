@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -40,6 +42,19 @@ const SurgicalDescription = ({
   const [validationData, setValidationData] = useState<ValidationResponse | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [canProceed, setCanProceed] = useState(true);
+
+  // Estados para materiales adicionales y sección de control
+  const [materialesAdicionales, setMaterialesAdicionales] = useState("");
+  const [sangradoOperatorio, setSangradoOperatorio] = useState("");
+  const [sangradoObservaciones, setSangradoObservaciones] = useState("");
+  const [conteoMaterial, setConteoMaterial] = useState("");
+  const [conteoObservaciones, setConteoObservaciones] = useState("");
+  const [compresas, setCompresas] = useState("");
+  const [compresasObservaciones, setCompresasObservaciones] = useState("");
+  const [gasas, setGasas] = useState("");
+  const [gasasObservaciones, setGasasObservaciones] = useState("");
+  const [patologias, setPatologias] = useState("");
+  const [patologiasObservaciones, setPatologiasObservaciones] = useState("");
 
   // Initialize form with Zod validation
   const {
@@ -265,7 +280,161 @@ const SurgicalDescription = ({
               <p className="text-sm text-destructive">{errors.complicaciones.message}</p>
             )}
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="materiales-adicionales" className="text-base font-semibold text-medical-blue">
+              Materiales Adicionales
+            </Label>
+            <Textarea
+              id="materiales-adicionales"
+              value={materialesAdicionales}
+              onChange={(e) => setMaterialesAdicionales(e.target.value)}
+              maxLength={5000}
+              placeholder="Describa los materiales adicionales utilizados..."
+              className="min-h-[150px] resize-y"
+            />
+          </div>
         </div>
+
+        {/* Sección de Control Quirúrgico */}
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-lg">Control Quirúrgico</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Sangrado Operatorio */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <Label className="w-48 flex-shrink-0">Sangrado Operatorio</Label>
+                <RadioGroup
+                  value={sangradoOperatorio}
+                  onValueChange={setSangradoOperatorio}
+                  className="flex flex-row gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="si" id="sangrado-si" />
+                    <Label htmlFor="sangrado-si" className="cursor-pointer">Sí</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="sangrado-no" />
+                    <Label htmlFor="sangrado-no" className="cursor-pointer">No</Label>
+                  </div>
+                </RadioGroup>
+                <Input
+                  id="sangrado-observaciones"
+                  value={sangradoObservaciones}
+                  onChange={(e) => setSangradoObservaciones(e.target.value)}
+                  placeholder="Observaciones..."
+                  className="flex-1"
+                />
+              </div>
+
+              {/* Conteo Material */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <Label className="w-48 flex-shrink-0">Conteo Material</Label>
+                <RadioGroup
+                  value={conteoMaterial}
+                  onValueChange={setConteoMaterial}
+                  className="flex flex-row gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="si" id="conteo-si" />
+                    <Label htmlFor="conteo-si" className="cursor-pointer">Sí</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="conteo-no" />
+                    <Label htmlFor="conteo-no" className="cursor-pointer">No</Label>
+                  </div>
+                </RadioGroup>
+                <Input
+                  id="conteo-observaciones"
+                  value={conteoObservaciones}
+                  onChange={(e) => setConteoObservaciones(e.target.value)}
+                  placeholder="Observaciones..."
+                  className="flex-1"
+                />
+              </div>
+
+              {/* Compresas */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <Label className="w-48 flex-shrink-0">Compresas</Label>
+                <RadioGroup
+                  value={compresas}
+                  onValueChange={setCompresas}
+                  className="flex flex-row gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="si" id="compresas-si" />
+                    <Label htmlFor="compresas-si" className="cursor-pointer">Sí</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="compresas-no" />
+                    <Label htmlFor="compresas-no" className="cursor-pointer">No</Label>
+                  </div>
+                </RadioGroup>
+                <Input
+                  id="compresas-observaciones"
+                  value={compresasObservaciones}
+                  onChange={(e) => setCompresasObservaciones(e.target.value)}
+                  placeholder="Observaciones..."
+                  className="flex-1"
+                />
+              </div>
+
+              {/* Gasas */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <Label className="w-48 flex-shrink-0">Gasas</Label>
+                <RadioGroup
+                  value={gasas}
+                  onValueChange={setGasas}
+                  className="flex flex-row gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="si" id="gasas-si" />
+                    <Label htmlFor="gasas-si" className="cursor-pointer">Sí</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="gasas-no" />
+                    <Label htmlFor="gasas-no" className="cursor-pointer">No</Label>
+                  </div>
+                </RadioGroup>
+                <Input
+                  id="gasas-observaciones"
+                  value={gasasObservaciones}
+                  onChange={(e) => setGasasObservaciones(e.target.value)}
+                  placeholder="Observaciones..."
+                  className="flex-1"
+                />
+              </div>
+
+              {/* Patologías */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <Label className="w-48 flex-shrink-0">Patologías</Label>
+                <RadioGroup
+                  value={patologias}
+                  onValueChange={setPatologias}
+                  className="flex flex-row gap-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="si" id="patologias-si" />
+                    <Label htmlFor="patologias-si" className="cursor-pointer">Sí</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="patologias-no" />
+                    <Label htmlFor="patologias-no" className="cursor-pointer">No</Label>
+                  </div>
+                </RadioGroup>
+                <Input
+                  id="patologias-observaciones"
+                  value={patologiasObservaciones}
+                  onChange={(e) => setPatologiasObservaciones(e.target.value)}
+                  placeholder="Observaciones..."
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-4 border-t">

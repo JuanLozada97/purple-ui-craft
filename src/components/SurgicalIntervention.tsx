@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ArrowRight, Sparkles, Loader2, Trash2, Search, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, ArrowRight, Sparkles, Loader2, Trash2, Search, Check, ChevronsUpDown, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { aiSuggestionRequestSchema, procedureSchema } from "@/schemas/surgical";
@@ -21,6 +21,9 @@ import {
 } from "@/data/procedures";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale/es";
 import { cn } from "@/lib/utils";
 export interface Procedure {
   code: string;
@@ -59,6 +62,15 @@ const SurgicalIntervention = ({
   const [selectedProcedure, setSelectedProcedure] = useState<ProcedureTemplate | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Surgical info panel state
+  const [salaNumber, setSalaNumber] = useState("");
+  const [fechaInicio, setFechaInicio] = useState<Date | undefined>(undefined);
+  const [fechaFin, setFechaFin] = useState<Date | undefined>(undefined);
+  const [tipoAnestesia, setTipoAnestesia] = useState("");
+  const [clasificacionASA, setClasificacionASA] = useState("");
+  const [esUrgencia, setEsUrgencia] = useState(false);
+  const [heridaCerradaSinContaminacion, setHeridaCerradaSinContaminacion] = useState(false);
   const generateSuggestions = async () => {
     setIsLoadingSuggestions(true);
     try {
@@ -161,7 +173,13 @@ const SurgicalIntervention = ({
     setPerformedProcedures(performedProcedures.filter((_, i) => i !== index));
   };
 
-  const addProcedureFromList = () => {
+  // Filter procedures based on category and search
+  const filteredProcedures =
+    selectedCategory === "all"
+      ? PROCEDURES_LIST
+      : getProceduresByCategory(PROCEDURE_CATEGORIES[selectedCategory as keyof typeof PROCEDURE_CATEGORIES]);
+
+  const addProcedureToPerformed = () => {
     if (!selectedProcedure) {
       toast.error("Por favor selecciona un procedimiento");
       return;
@@ -171,6 +189,8 @@ const SurgicalIntervention = ({
       code: selectedProcedure.code,
       name: selectedProcedure.name,
       via: selectedProcedure.via,
+      quantity: 1,
+      isPrimary: performedProcedures.length === 0,
     };
 
     // Validate procedure data
@@ -182,8 +202,8 @@ const SurgicalIntervention = ({
       return;
     }
 
-    setScheduledProcedures([...scheduledProcedures, validationResult.data as Procedure]);
-    toast.success(`✅ ${selectedProcedure.name} agregado a programados`);
+    setPerformedProcedures([...performedProcedures, validationResult.data as Procedure]);
+    toast.success(`✅ ${selectedProcedure.name} agregado a realizados`);
 
     // Reset selection
     setSelectedProcedure(null);
@@ -191,11 +211,6 @@ const SurgicalIntervention = ({
     setOpen(false);
   };
 
-  // Filter procedures based on category and search
-  const filteredProcedures =
-    selectedCategory === "all"
-      ? PROCEDURES_LIST
-      : getProceduresByCategory(PROCEDURE_CATEGORIES[selectedCategory as keyof typeof PROCEDURE_CATEGORIES]);
   return (
     <Card>
       <CardHeader className="bg-accent">
@@ -205,125 +220,144 @@ const SurgicalIntervention = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
-        {/* General Section */}
-
-        {/* Additional Information */}
-
-        {/* IPS Services */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg border-b pb-2">Servicios IPS</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Categoría</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas las categorías" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
-                  {Object.entries(PROCEDURE_CATEGORIES).map(([key, value]) => (
-                    <SelectItem key={key} value={key}>
-                      {value}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Buscar Procedimiento</Label>
-              <div className="flex gap-2">
-                <Popover open={open} onOpenChange={setOpen}>
+        {/* Panel Superior de Información Quirúrgica */}
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-lg">Información Quirúrgica</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sala">No. Sala</Label>
+                <Input
+                  id="sala"
+                  value={salaNumber}
+                  onChange={(e) => setSalaNumber(e.target.value)}
+                  placeholder="Ej: 1, 2, 3..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha de Inicio</Label>
+                <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={open} className="flex-1 justify-between">
-                      {selectedProcedure
-                        ? `${selectedProcedure.code} - ${selectedProcedure.name.substring(0, 30)}${selectedProcedure.name.length > 30 ? "..." : ""}`
-                        : "Seleccionar procedimiento..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !fechaInicio && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {fechaInicio ? format(fechaInicio, "PPP", { locale: es }) : "Seleccionar fecha"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[500px] p-0">
-                    <Command>
-                      <CommandInput
-                        placeholder="Buscar procedimiento..."
-                        value={searchTerm}
-                        onValueChange={setSearchTerm}
-                      />
-                      <CommandList>
-                        <CommandEmpty>No se encontraron procedimientos.</CommandEmpty>
-                        <CommandGroup>
-                          {filteredProcedures
-                            .filter((proc) => {
-                              if (!searchTerm) return true;
-                              const term = searchTerm.toLowerCase();
-                              return (
-                                proc.name.toLowerCase().includes(term) ||
-                                proc.code.toLowerCase().includes(term) ||
-                                proc.via.toLowerCase().includes(term)
-                              );
-                            })
-                            .slice(0, 20)
-                            .map((procedure) => (
-                              <CommandItem
-                                key={`${procedure.code}-${procedure.via}`}
-                                value={`${procedure.code} ${procedure.name} ${procedure.via}`}
-                                onSelect={() => {
-                                  setSelectedProcedure(procedure);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedProcedure?.code === procedure.code &&
-                                      selectedProcedure?.via === procedure.via
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {procedure.code} - {procedure.name}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    Vía: {procedure.via} | {procedure.category}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={fechaInicio}
+                      onSelect={setFechaInicio}
+                      initialFocus
+                    />
                   </PopoverContent>
                 </Popover>
-                <Button size="default" onClick={addProcedureFromList} disabled={!selectedProcedure}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Agregar
-                </Button>
               </div>
-              {selectedProcedure && <p className="text-xs text-muted-foreground mt-1">Vía: {selectedProcedure.via}</p>}
+              <div className="space-y-2">
+                <Label>Fecha de Fin</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !fechaFin && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {fechaFin ? format(fechaFin, "PPP", { locale: es }) : "Seleccionar fecha"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={fechaFin}
+                      onSelect={setFechaFin}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Anestesia</Label>
+                <Select value={tipoAnestesia} onValueChange={setTipoAnestesia}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="regional">Regional</SelectItem>
+                    <SelectItem value="local">Local</SelectItem>
+                    <SelectItem value="sedacion">Sedación</SelectItem>
+                    <SelectItem value="otra">Otra</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Clasificación ASA</Label>
+                <Select value={clasificacionASA} onValueChange={setClasificacionASA}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar ASA" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ASA I">ASA I - Paciente sano</SelectItem>
+                    <SelectItem value="ASA II">ASA II - Enfermedad sistémica leve</SelectItem>
+                    <SelectItem value="ASA III">ASA III - Enfermedad sistémica severa</SelectItem>
+                    <SelectItem value="ASA IV">ASA IV - Enfermedad sistémica severa con riesgo vital</SelectItem>
+                    <SelectItem value="ASA V">ASA V - Moribundo</SelectItem>
+                    <SelectItem value="ASA VI">ASA VI - Donante de órganos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 flex items-end">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="urgencia"
+                    checked={esUrgencia}
+                    onCheckedChange={(checked) => setEsUrgencia(checked === true)}
+                  />
+                  <Label htmlFor="urgencia" className="cursor-pointer">
+                    Cirugía de urgencia
+                  </Label>
+                </div>
+              </div>
+              <div className="space-y-2 flex items-end">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="herida-cerrada"
+                    checked={heridaCerradaSinContaminacion}
+                    onCheckedChange={(checked) => setHeridaCerradaSinContaminacion(checked === true)}
+                  />
+                  <Label htmlFor="herida-cerrada" className="cursor-pointer">
+                    Herida cerrada sin contaminación
+                  </Label>
+                </div>
+              </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          <div className="space-y-6">
+        {/* IPS Services */}
+        {/* Sección de Procedimientos Sugeridos por IA oculta */}
+        {false && (
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg border-b pb-2">Servicios IPS</h3>
+
             {/* AI Suggested Procedures Section */}
             <div className="bg-gradient-to-r from-primary/5 to-accent p-4 rounded-lg border border-primary/20">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4">
                 <h4 className="font-semibold text-base flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
                   Procedimientos Sugeridos por IA
                 </h4>
-                <Button onClick={generateSuggestions} disabled={isLoadingSuggestions} size="sm" className="gap-2">
-                  {isLoadingSuggestions ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      Generar Sugerencias con IA
-                    </>
-                  )}
-                </Button>
               </div>
 
               {isLoadingSuggestions ? (
@@ -365,10 +399,17 @@ const SurgicalIntervention = ({
                 </p>
               )}
             </div>
+          </div>
+        )}
 
-            {/* Scheduled Procedures */}
-            <div>
-              <h4 className="font-semibold text-base mb-3">Procedimientos Programados</h4>
+        {/* Tablas de Procedimientos */}
+        <div className="space-y-6">
+          {/* Procedimientos Programados */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Procedimientos Programados</CardTitle>
+            </CardHeader>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -381,7 +422,7 @@ const SurgicalIntervention = ({
                 <TableBody>
                   {scheduledProcedures.length > 0 ? (
                     scheduledProcedures.map((procedure, index) => (
-                      <TableRow key={index} className="bg-accent">
+                      <TableRow key={index}>
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
@@ -406,16 +447,113 @@ const SurgicalIntervention = ({
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Performed Procedures */}
-            <div>
-              <h4 className="font-semibold text-base mb-3">Procedimientos Realizados</h4>
+          {/* Procedimientos Realizados */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Procedimientos Realizados</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Sección de Agregar Nuevos Procedimientos */}
+              <div className="space-y-4 border-b pb-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-base">Agregar Nuevos Procedimientos</h4>
+                  <Button onClick={generateSuggestions} disabled={isLoadingSuggestions} size="sm" className="gap-2">
+                    {isLoadingSuggestions ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Generar Sugerencias con IA
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Label>Buscar Procedimiento</Label>
+                  <div className="flex gap-2">
+                    <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" aria-expanded={open} className="flex-1 justify-between">
+                          {selectedProcedure
+                            ? `${selectedProcedure.code} - ${selectedProcedure.name.substring(0, 30)}${selectedProcedure.name.length > 30 ? "..." : ""}`
+                            : "Seleccionar procedimiento..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[500px] p-0">
+                        <Command>
+                          <CommandInput
+                            placeholder="Buscar procedimiento..."
+                            value={searchTerm}
+                            onValueChange={setSearchTerm}
+                          />
+                          <CommandList>
+                            <CommandEmpty>No se encontraron procedimientos.</CommandEmpty>
+                            <CommandGroup>
+                              {filteredProcedures
+                                .filter((proc) => {
+                                  if (!searchTerm) return true;
+                                  const term = searchTerm.toLowerCase();
+                                  return (
+                                    proc.name.toLowerCase().includes(term) ||
+                                    proc.code.toLowerCase().includes(term) ||
+                                    proc.via.toLowerCase().includes(term)
+                                  );
+                                })
+                                .slice(0, 20)
+                                .map((procedure) => (
+                                  <CommandItem
+                                    key={`${procedure.code}-${procedure.via}`}
+                                    value={`${procedure.code} ${procedure.name} ${procedure.via}`}
+                                    onSelect={() => {
+                                      setSelectedProcedure(procedure);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedProcedure?.code === procedure.code &&
+                                          selectedProcedure?.via === procedure.via
+                                          ? "opacity-100"
+                                          : "opacity-0",
+                                      )}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {procedure.code} - {procedure.name}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        Vía: {procedure.via} | {procedure.category}
+                                      </span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <Button size="default" onClick={addProcedureToPerformed} disabled={!selectedProcedure}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Agregar
+                    </Button>
+                  </div>
+                  {selectedProcedure && <p className="text-xs text-muted-foreground mt-1">Vía: {selectedProcedure.via}</p>}
+                </div>
+              </div>
+
+              {/* Tabla de Procedimientos Realizados */}
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[100px]">Código</TableHead>
-                    <TableHead>Procedimiento</TableHead>
+                    <TableHead>Descripción</TableHead>
                     <TableHead>Vía</TableHead>
                     <TableHead className="w-[100px]">Cantidad</TableHead>
                     <TableHead className="w-[100px]">Principal</TableHead>
@@ -425,7 +563,7 @@ const SurgicalIntervention = ({
                 <TableBody>
                   {performedProcedures.length > 0 ? (
                     performedProcedures.map((procedure, index) => (
-                      <TableRow key={index} className="bg-primary/5">
+                      <TableRow key={index}>
                         <TableCell className="font-medium">{procedure.code}</TableCell>
                         <TableCell>{procedure.name}</TableCell>
                         <TableCell>{procedure.via}</TableCell>
@@ -447,8 +585,8 @@ const SurgicalIntervention = ({
                   )}
                 </TableBody>
               </Table>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Diagnostics */}

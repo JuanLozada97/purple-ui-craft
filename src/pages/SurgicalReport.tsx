@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import PatientInfo from "@/components/PatientInfo";
 import SurgicalIntervention, { Procedure } from "@/components/SurgicalIntervention";
 import SurgicalDescription from "@/components/SurgicalDescription";
+import SurgicalTeam from "@/components/SurgicalTeam";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mic } from "lucide-react";
@@ -13,11 +14,12 @@ import { useGeminiLiveChunks } from "@/hooks/useGeminiLiveChunks";
 import { useGeminiRecorder } from "@/hooks/useGeminiRecorder";
 import { appendToActiveTextarea } from "@/lib/appendToActiveTextarea";
 import { useToast } from "@/components/ui/use-toast";
+import { SurgicalTeamMember } from "@/types/surgical-team";
 
 const SurgicalReport = () => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("description");
+  const [activeTab, setActiveTab] = useState("team");
   const { toast } = useToast();
 
   const { isSupported, isListening, error, start, toggle } = useSpeechRecognition({
@@ -101,6 +103,9 @@ const SurgicalReport = () => {
   }, [geminiRecordError, toast]);
 
   const patient = mockPatients.find((p) => p.id === patientId);
+  
+  // Estados de Equipo Quirúrgico
+  const [teamMembers, setTeamMembers] = useState<SurgicalTeamMember[]>([]);
   
   // Estados de Descripción Quirúrgica
   const [hallazgos, setHallazgos] = useState("");
@@ -204,10 +209,19 @@ const SurgicalReport = () => {
         <PatientInfo patient={patient} />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="description">Descripción quirúrgica</TabsTrigger>
-            <TabsTrigger value="intervention">Intervención practicada</TabsTrigger>
+          <TabsList className="grid w-full max-w-3xl grid-cols-3">
+            <TabsTrigger value="team" className="px-4">Equipo quirúrgico</TabsTrigger>
+            <TabsTrigger value="description" className="px-4">Descripción quirúrgica</TabsTrigger>
+            <TabsTrigger value="intervention" className="px-4">Intervención practicada</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="team" className="mt-6">
+            <SurgicalTeam 
+              teamMembers={teamMembers}
+              setTeamMembers={setTeamMembers}
+              onNext={() => setActiveTab("description")}
+            />
+          </TabsContent>
           
           <TabsContent value="description" className="mt-6">
             <SurgicalDescription 
